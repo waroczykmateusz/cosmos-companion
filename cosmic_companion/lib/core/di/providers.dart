@@ -4,6 +4,7 @@ import 'package:cosmic_companion/core/auth/secure_storage.dart';
 import 'package:cosmic_companion/core/privacy/data_purger.dart';
 import 'package:cosmic_companion/core/privacy/pii_filter.dart';
 import 'package:cosmic_companion/core/privacy/telemetry_consent.dart';
+import 'package:cosmic_companion/data/database/app_database.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -36,3 +37,9 @@ final localAuthProvider =
 final authStateProvider = Provider<AuthState>(
   (ref) => ref.watch(localAuthProvider),
 );
+
+final databaseProvider = Provider<AppDatabase>((ref) {
+  final db = AppDatabase();
+  ref.onDispose(db.close);
+  return db;
+});
