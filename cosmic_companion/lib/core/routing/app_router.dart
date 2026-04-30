@@ -1,5 +1,7 @@
 import 'package:cosmic_companion/core/auth/auth_state.dart';
 import 'package:cosmic_companion/core/di/providers.dart';
+import 'package:cosmic_companion/features/auth/pages/lock_screen_page.dart';
+import 'package:cosmic_companion/features/auth/pages/onboarding_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -22,11 +24,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(
         path: '/onboarding',
-        builder: (context, state) => const _PlaceholderPage('Onboarding'),
+        builder: (context, state) => const OnboardingPage(),
       ),
       GoRoute(
         path: '/lock',
-        builder: (context, state) => const _PlaceholderPage('Lock Screen'),
+        builder: (context, state) => const LockScreenPage(),
       ),
       GoRoute(
         path: '/',
