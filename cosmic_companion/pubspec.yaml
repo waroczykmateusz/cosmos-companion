@@ -1,0 +1,74 @@
+name: cosmic_companion
+description: Cosmic Companion — astrofotografia i astrologia, offline-first.
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.7.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # === STATE MANAGEMENT ===
+  flutter_riverpod: ^2.6.1
+
+  # === DATABASE ===
+  drift: ^2.22.1
+  drift_flutter: ^0.2.4
+
+  # === MODELS ===
+  freezed_annotation: ^2.4.4
+  json_annotation: ^4.9.0
+
+  # === ROUTING ===
+  go_router: ^15.1.2
+
+  # === AUTH & SECURITY ===
+  flutter_secure_storage: ^9.2.2
+  local_auth: ^2.3.0
+  crypto: ^3.0.6
+
+  # === LOCATION ===
+  geolocator: ^13.0.2
+  permission_handler: ^11.3.1
+
+  # === I18N ===
+  intl: ^0.20.2
+
+  # === ASTRONOMY ===
+  sweph: ^2.10.0
+  # astronomy_engine: TBD — znaleźć poprawną nazwę paczki lub git dependency
+
+  # === OBSERVABILITY ===
+  sentry_flutter: ^8.14.2
+
+  # === UTILS ===
+  uuid: ^4.5.1
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  build_runner: ^2.4.14
+  freezed: ^2.5.7
+  json_serializable: ^6.9.0
+  mocktail: ^1.0.4
+  very_good_analysis: ^7.0.0
+
+  # === RESERVED FOR FUTURE FEATURES (uncomment when implementing) ===
+  # arcore_flutter_plugin: ^0.x        # AR Sky Map (Android)
+  # arkit_plugin: ^1.x                 # AR Sky Map (iOS)
+  # supabase_flutter: ^2.x             # Cloud sync
+  # share_plus: ^9.x                   # Stellarium/SkySafari export
+  # maplibre_gl: ^0.x                  # Light Pollution Map
+
+flutter:
+  uses-material-design: true
+  generate: true
+
+  assets:
+    - assets/ephemeris/
+    - assets/icons/zodiac/
