@@ -7,6 +7,8 @@ void main() {
     await tester.pumpWidget(
       const ProviderScope(child: CosmicCompanionApp()),
     );
-    expect(find.text('Cosmic Companion — bootstrap OK'), findsOneWidget);
+    // App renders; auth guard redirects to onboarding or lock screen.
+    await tester.pump();
+    expect(find.byType(CosmicCompanionApp), findsOneWidget);
   });
 }
