@@ -13,6 +13,7 @@ class CosmicCompanionApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
+    final router = ref.watch(appRouterProvider);
 
     return MaterialApp.router(
       title: 'Cosmic Companion',
@@ -20,7 +21,7 @@ class CosmicCompanionApp extends ConsumerWidget {
       theme: themeMode == AppThemeMode.nightDark
           ? AppTheme.nightDark
           : AppTheme.dark,
-      routerConfig: appRouter,
+      routerConfig: router,
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
@@ -28,7 +29,8 @@ class CosmicCompanionApp extends ConsumerWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: AppLocalizations.supportedLocales,
-      builder: (context, child) => NightModeOverlay(child: child ?? const SizedBox.shrink()),
+      builder: (context, child) =>
+          NightModeOverlay(child: child ?? const SizedBox.shrink()),
     );
   }
 }
