@@ -51,6 +51,28 @@ final planetBodyProvider = FutureProvider.autoDispose
   return _calculator.computeBody(id, DateTime.now().toUtc(), location);
 });
 
+const _wheelBodyIds = [
+  CelestialBodyId.sun,
+  CelestialBodyId.moon,
+  CelestialBodyId.mercury,
+  CelestialBodyId.venus,
+  CelestialBodyId.mars,
+  CelestialBodyId.jupiter,
+  CelestialBodyId.saturn,
+  CelestialBodyId.uranus,
+  CelestialBodyId.neptune,
+  CelestialBodyId.pluto,
+];
+
+final horoscopeWheelProvider =
+    FutureProvider.autoDispose<List<CelestialBody>>((ref) async {
+  final location = await ref.watch(currentLocationProvider.future);
+  final now = DateTime.now().toUtc();
+  return Future.wait(
+    _wheelBodyIds.map((id) => _calculator.computeBody(id, now, location)),
+  );
+});
+
 enum SeeingRating { excellent, good, fair, poor, bad }
 
 /// Mock seeing indicator — deterministic per day-of-year, not real.

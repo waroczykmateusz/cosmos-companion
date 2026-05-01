@@ -94,5 +94,8 @@
 
   "planetsSectionTitle": "Planets today",
   "aboveHorizon": "Alt {deg}°",
-  "belowHorizon": "Below horizon"
+  "belowHorizon": "Below horizon",
+
+  "horoscopeWheelTitle": "Planet positions",
+  "@horoscopeWheelTitle": {}
 }

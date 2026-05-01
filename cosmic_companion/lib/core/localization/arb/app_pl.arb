@@ -149,5 +149,8 @@
   "@aboveHorizon": {
     "placeholders": { "deg": { "type": "String" } }
   },
-  "belowHorizon": "Pod horyzontem"
+  "belowHorizon": "Pod horyzontem",
+
+  "horoscopeWheelTitle": "Układ planet",
+  "@horoscopeWheelTitle": {}
 }

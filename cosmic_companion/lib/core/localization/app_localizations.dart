@@ -643,6 +643,12 @@ abstract class AppLocalizations {
   /// In pl, this message translates to:
   /// **'Pod horyzontem'**
   String get belowHorizon;
+
+  /// No description provided for @horoscopeWheelTitle.
+  ///
+  /// In pl, this message translates to:
+  /// **'Układ planet'**
+  String get horoscopeWheelTitle;
 }
 
 class _AppLocalizationsDelegate

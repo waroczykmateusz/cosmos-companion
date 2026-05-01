@@ -1,6 +1,7 @@
 import 'package:cosmic_companion/core/localization/app_localizations.dart';
 import 'package:cosmic_companion/features/calendar/pages/calendar_page.dart';
 import 'package:cosmic_companion/features/dashboard/providers/dashboard_providers.dart';
+import 'package:cosmic_companion/features/dashboard/widgets/horoscope_wheel.dart';
 import 'package:cosmic_companion/features/dashboard/widgets/moon_card.dart';
 import 'package:cosmic_companion/features/dashboard/widgets/night_mode_button.dart';
 import 'package:cosmic_companion/features/dashboard/widgets/planets_row.dart';
@@ -62,6 +63,8 @@ class DashboardPage extends ConsumerWidget {
             MoonCard(),
             SizedBox(height: 12),
             ZodiacCard(),
+            SizedBox(height: 12),
+            HoroscopeWheelCard(),
             SizedBox(height: 12),
             SeeingIndicator(),
             SizedBox(height: 20),

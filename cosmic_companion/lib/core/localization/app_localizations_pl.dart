@@ -295,4 +295,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get belowHorizon => 'Pod horyzontem';
+
+  @override
+  String get horoscopeWheelTitle => 'Układ planet';
 }
