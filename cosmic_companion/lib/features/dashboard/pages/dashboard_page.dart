@@ -5,6 +5,7 @@ import 'package:cosmic_companion/features/dashboard/widgets/moon_card.dart';
 import 'package:cosmic_companion/features/dashboard/widgets/night_mode_button.dart';
 import 'package:cosmic_companion/features/dashboard/widgets/seeing_indicator.dart';
 import 'package:cosmic_companion/features/dashboard/widgets/zodiac_card.dart';
+import 'package:cosmic_companion/features/map/pages/light_pollution_map_page.dart';
 import 'package:cosmic_companion/features/settings/pages/settings_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -26,6 +27,14 @@ class DashboardPage extends ConsumerWidget {
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
                 builder: (_) => const CalendarPage(),
+              ),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.map_outlined),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const LightPollutionMapPage(),
               ),
             ),
           ),

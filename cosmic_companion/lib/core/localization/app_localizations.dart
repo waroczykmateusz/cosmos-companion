@@ -446,32 +446,185 @@ abstract class AppLocalizations {
   /// **'Nie'**
   String get no;
 
+  /// No description provided for @equipmentTitle.
+  ///
+  /// In pl, this message translates to:
+  /// **'Sprzęt'**
   String get equipmentTitle;
+
+  /// No description provided for @equipmentNameLabel.
+  ///
+  /// In pl, this message translates to:
+  /// **'Nazwa'**
   String get equipmentNameLabel;
+
+  /// No description provided for @equipmentTypeLabel.
+  ///
+  /// In pl, this message translates to:
+  /// **'Typ'**
   String get equipmentTypeLabel;
+
+  /// No description provided for @equipmentNotesLabel.
+  ///
+  /// In pl, this message translates to:
+  /// **'Notatki'**
   String get equipmentNotesLabel;
+
+  /// No description provided for @equipmentTypeTelescope.
+  ///
+  /// In pl, this message translates to:
+  /// **'Teleskop'**
   String get equipmentTypeTelescope;
+
+  /// No description provided for @equipmentTypeMount.
+  ///
+  /// In pl, this message translates to:
+  /// **'Montaż'**
   String get equipmentTypeMount;
+
+  /// No description provided for @equipmentTypeCamera.
+  ///
+  /// In pl, this message translates to:
+  /// **'Aparat'**
   String get equipmentTypeCamera;
+
+  /// No description provided for @equipmentTypeEyepiece.
+  ///
+  /// In pl, this message translates to:
+  /// **'Okular'**
   String get equipmentTypeEyepiece;
+
+  /// No description provided for @equipmentTypeFilter.
+  ///
+  /// In pl, this message translates to:
+  /// **'Filtr'**
   String get equipmentTypeFilter;
+
+  /// No description provided for @equipmentTypeOther.
+  ///
+  /// In pl, this message translates to:
+  /// **'Inne'**
   String get equipmentTypeOther;
+
+  /// No description provided for @equipmentAdd.
+  ///
+  /// In pl, this message translates to:
+  /// **'Dodaj sprzęt'**
   String get equipmentAdd;
+
+  /// No description provided for @equipmentSave.
+  ///
+  /// In pl, this message translates to:
+  /// **'Zapisz'**
   String get equipmentSave;
+
+  /// No description provided for @equipmentDelete.
+  ///
+  /// In pl, this message translates to:
+  /// **'Usuń'**
   String get equipmentDelete;
+
+  /// No description provided for @equipmentDeleteConfirm.
+  ///
+  /// In pl, this message translates to:
+  /// **'Usunąć ten element?'**
   String get equipmentDeleteConfirm;
+
+  /// No description provided for @equipmentEmpty.
+  ///
+  /// In pl, this message translates to:
+  /// **'Brak sprzętu. Dodaj teleskop, montaż lub aparat.'**
   String get equipmentEmpty;
+
+  /// No description provided for @lockAction.
+  ///
+  /// In pl, this message translates to:
+  /// **'Zablokuj'**
   String get lockAction;
+
+  /// No description provided for @versionLabel.
+  ///
+  /// In pl, this message translates to:
+  /// **'Wersja'**
   String get versionLabel;
+
+  /// No description provided for @profileTitle.
+  ///
+  /// In pl, this message translates to:
+  /// **'Profil'**
   String get profileTitle;
+
+  /// No description provided for @comingSoon.
+  ///
+  /// In pl, this message translates to:
+  /// **'Dostępne wkrótce'**
   String get comingSoon;
 
+  /// No description provided for @calendarTitle.
+  ///
+  /// In pl, this message translates to:
+  /// **'Kalendarz'**
   String get calendarTitle;
+
+  /// No description provided for @calendarNoEvents.
+  ///
+  /// In pl, this message translates to:
+  /// **'Brak wydarzeń w tym miesiącu'**
   String get calendarNoEvents;
+
+  /// No description provided for @calendarMoonPhaseEvent.
+  ///
+  /// In pl, this message translates to:
+  /// **'Faza Księżyca'**
   String get calendarMoonPhaseEvent;
+
+  /// No description provided for @planetaryIngressEvent.
+  ///
+  /// In pl, this message translates to:
+  /// **'{body} wchodzi w {sign}'**
   String planetaryIngressEvent(String body, String sign);
+
+  /// No description provided for @calendarLabelMoonIngress.
+  ///
+  /// In pl, this message translates to:
+  /// **'Księżyc zmienia znak'**
   String get calendarLabelMoonIngress;
+
+  /// No description provided for @calendarLabelPlanetIngress.
+  ///
+  /// In pl, this message translates to:
+  /// **'Ingres planetarny'**
   String get calendarLabelPlanetIngress;
+
+  /// No description provided for @mapTitle.
+  ///
+  /// In pl, this message translates to:
+  /// **'Mapa nieba'**
+  String get mapTitle;
+
+  /// No description provided for @bortleScaleTitle.
+  ///
+  /// In pl, this message translates to:
+  /// **'Skala Bortle'**
+  String get bortleScaleTitle;
+
+  /// No description provided for @lightPollutionOverlay.
+  ///
+  /// In pl, this message translates to:
+  /// **'Nakładka zanieczyszczenia światłem'**
+  String get lightPollutionOverlay;
+
+  /// No description provided for @bortleEstimateLabel.
+  ///
+  /// In pl, this message translates to:
+  /// **'Szacowany poziom'**
+  String get bortleEstimateLabel;
+
+  /// No description provided for @darkSkyTip.
+  ///
+  /// In pl, this message translates to:
+  /// **'Szukaj miejsc z Bortle ≤4 dla astrofotografii.'**
+  String get darkSkyTip;
 }
 
 class _AppLocalizationsDelegate

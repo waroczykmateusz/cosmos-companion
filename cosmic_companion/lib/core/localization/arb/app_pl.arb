@@ -103,5 +103,44 @@
   "error": "Błąd",
   "loading": "Ładowanie…",
   "yes": "Tak",
-  "no": "Nie"
+  "no": "Nie",
+
+  "equipmentTitle": "Sprzęt",
+  "equipmentNameLabel": "Nazwa",
+  "equipmentTypeLabel": "Typ",
+  "equipmentNotesLabel": "Notatki",
+  "equipmentTypeTelescope": "Teleskop",
+  "equipmentTypeMount": "Montaż",
+  "equipmentTypeCamera": "Aparat",
+  "equipmentTypeEyepiece": "Okular",
+  "equipmentTypeFilter": "Filtr",
+  "equipmentTypeOther": "Inne",
+  "equipmentAdd": "Dodaj sprzęt",
+  "equipmentSave": "Zapisz",
+  "equipmentDelete": "Usuń",
+  "equipmentDeleteConfirm": "Usunąć ten element?",
+  "equipmentEmpty": "Brak sprzętu. Dodaj teleskop, montaż lub aparat.",
+  "lockAction": "Zablokuj",
+  "versionLabel": "Wersja",
+  "profileTitle": "Profil",
+  "comingSoon": "Dostępne wkrótce",
+
+  "calendarTitle": "Kalendarz",
+  "calendarNoEvents": "Brak wydarzeń w tym miesiącu",
+  "calendarMoonPhaseEvent": "Faza Księżyca",
+  "planetaryIngressEvent": "{body} wchodzi w {sign}",
+  "@planetaryIngressEvent": {
+    "placeholders": {
+      "body": { "type": "String" },
+      "sign": { "type": "String" }
+    }
+  },
+  "calendarLabelMoonIngress": "Księżyc zmienia znak",
+  "calendarLabelPlanetIngress": "Ingres planetarny",
+
+  "mapTitle": "Mapa nieba",
+  "bortleScaleTitle": "Skala Bortle",
+  "lightPollutionOverlay": "Nakładka zanieczyszczenia światłem",
+  "bortleEstimateLabel": "Szacowany poziom",
+  "darkSkyTip": "Szukaj miejsc z Bortle ≤4 dla astrofotografii."
 }

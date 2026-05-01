@@ -260,12 +260,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get calendarMoonPhaseEvent => 'Moon Phase';
 
   @override
-  String planetaryIngressEvent(String body, String sign) =>
-      '$body enters $sign';
+  String planetaryIngressEvent(String body, String sign) {
+    return '$body enters $sign';
+  }
 
   @override
   String get calendarLabelMoonIngress => 'Moon changes sign';
 
   @override
   String get calendarLabelPlanetIngress => 'Planetary ingress';
+
+  @override
+  String get mapTitle => 'Sky Map';
+
+  @override
+  String get bortleScaleTitle => 'Bortle Scale';
+
+  @override
+  String get lightPollutionOverlay => 'Light pollution overlay';
+
+  @override
+  String get bortleEstimateLabel => 'Estimated level';
+
+  @override
+  String get darkSkyTip => 'Look for Bortle ≤4 sites for astrophotography.';
 }

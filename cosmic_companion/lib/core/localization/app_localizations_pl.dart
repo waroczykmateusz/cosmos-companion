@@ -235,7 +235,8 @@ class AppLocalizationsPl extends AppLocalizations {
   String get equipmentDeleteConfirm => 'Usunąć ten element?';
 
   @override
-  String get equipmentEmpty => 'Brak sprzętu. Dodaj teleskop, montaż lub aparat.';
+  String get equipmentEmpty =>
+      'Brak sprzętu. Dodaj teleskop, montaż lub aparat.';
 
   @override
   String get lockAction => 'Zablokuj';
@@ -259,12 +260,28 @@ class AppLocalizationsPl extends AppLocalizations {
   String get calendarMoonPhaseEvent => 'Faza Księżyca';
 
   @override
-  String planetaryIngressEvent(String body, String sign) =>
-      '$body wchodzi w $sign';
+  String planetaryIngressEvent(String body, String sign) {
+    return '$body wchodzi w $sign';
+  }
 
   @override
   String get calendarLabelMoonIngress => 'Księżyc zmienia znak';
 
   @override
   String get calendarLabelPlanetIngress => 'Ingres planetarny';
+
+  @override
+  String get mapTitle => 'Mapa nieba';
+
+  @override
+  String get bortleScaleTitle => 'Skala Bortle';
+
+  @override
+  String get lightPollutionOverlay => 'Nakładka zanieczyszczenia światłem';
+
+  @override
+  String get bortleEstimateLabel => 'Szacowany poziom';
+
+  @override
+  String get darkSkyTip => 'Szukaj miejsc z Bortle ≤4 dla astrofotografii.';
 }
