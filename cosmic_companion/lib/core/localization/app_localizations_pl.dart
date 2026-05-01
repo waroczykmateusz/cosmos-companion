@@ -284,4 +284,15 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get darkSkyTip => 'Szukaj miejsc z Bortle ≤4 dla astrofotografii.';
+
+  @override
+  String get planetsSectionTitle => 'Planety dziś';
+
+  @override
+  String aboveHorizon(String deg) {
+    return 'Alt $deg°';
+  }
+
+  @override
+  String get belowHorizon => 'Pod horyzontem';
 }

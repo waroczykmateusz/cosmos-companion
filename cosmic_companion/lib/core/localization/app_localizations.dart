@@ -625,6 +625,24 @@ abstract class AppLocalizations {
   /// In pl, this message translates to:
   /// **'Szukaj miejsc z Bortle ≤4 dla astrofotografii.'**
   String get darkSkyTip;
+
+  /// No description provided for @planetsSectionTitle.
+  ///
+  /// In pl, this message translates to:
+  /// **'Planety dziś'**
+  String get planetsSectionTitle;
+
+  /// No description provided for @aboveHorizon.
+  ///
+  /// In pl, this message translates to:
+  /// **'Alt {deg}°'**
+  String aboveHorizon(String deg);
+
+  /// No description provided for @belowHorizon.
+  ///
+  /// In pl, this message translates to:
+  /// **'Pod horyzontem'**
+  String get belowHorizon;
 }
 
 class _AppLocalizationsDelegate

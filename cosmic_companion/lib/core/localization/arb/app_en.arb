@@ -90,5 +90,9 @@
   "bortleScaleTitle": "Bortle Scale",
   "lightPollutionOverlay": "Light pollution overlay",
   "bortleEstimateLabel": "Estimated level",
-  "darkSkyTip": "Look for Bortle ≤4 sites for astrophotography."
+  "darkSkyTip": "Look for Bortle ≤4 sites for astrophotography.",
+
+  "planetsSectionTitle": "Planets today",
+  "aboveHorizon": "Alt {deg}°",
+  "belowHorizon": "Below horizon"
 }

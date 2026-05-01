@@ -284,4 +284,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get darkSkyTip => 'Look for Bortle ≤4 sites for astrophotography.';
+
+  @override
+  String get planetsSectionTitle => 'Planets today';
+
+  @override
+  String aboveHorizon(String deg) {
+    return 'Alt $deg°';
+  }
+
+  @override
+  String get belowHorizon => 'Below horizon';
 }

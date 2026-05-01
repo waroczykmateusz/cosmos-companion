@@ -44,6 +44,13 @@ final moonBodyProvider =
   );
 });
 
+/// Generic provider for any celestial body position — keyed by [CelestialBodyId].
+final planetBodyProvider = FutureProvider.autoDispose
+    .family<CelestialBody, CelestialBodyId>((ref, id) async {
+  final location = await ref.watch(currentLocationProvider.future);
+  return _calculator.computeBody(id, DateTime.now().toUtc(), location);
+});
+
 enum SeeingRating { excellent, good, fair, poor, bad }
 
 /// Mock seeing indicator — deterministic per day-of-year, not real.

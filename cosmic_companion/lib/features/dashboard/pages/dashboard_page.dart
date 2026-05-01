@@ -3,6 +3,7 @@ import 'package:cosmic_companion/features/calendar/pages/calendar_page.dart';
 import 'package:cosmic_companion/features/dashboard/providers/dashboard_providers.dart';
 import 'package:cosmic_companion/features/dashboard/widgets/moon_card.dart';
 import 'package:cosmic_companion/features/dashboard/widgets/night_mode_button.dart';
+import 'package:cosmic_companion/features/dashboard/widgets/planets_row.dart';
 import 'package:cosmic_companion/features/dashboard/widgets/seeing_indicator.dart';
 import 'package:cosmic_companion/features/dashboard/widgets/zodiac_card.dart';
 import 'package:cosmic_companion/features/map/pages/light_pollution_map_page.dart';
@@ -63,6 +64,8 @@ class DashboardPage extends ConsumerWidget {
             ZodiacCard(),
             SizedBox(height: 12),
             SeeingIndicator(),
+            SizedBox(height: 20),
+            PlanetsRow(),
           ],
         ),
       ),
