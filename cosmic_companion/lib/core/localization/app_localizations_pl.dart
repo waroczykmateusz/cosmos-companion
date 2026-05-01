@@ -191,4 +191,61 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get no => 'Nie';
+
+  @override
+  String get equipmentTitle => 'Sprzęt';
+
+  @override
+  String get equipmentNameLabel => 'Nazwa';
+
+  @override
+  String get equipmentTypeLabel => 'Typ';
+
+  @override
+  String get equipmentNotesLabel => 'Notatki';
+
+  @override
+  String get equipmentTypeTelescope => 'Teleskop';
+
+  @override
+  String get equipmentTypeMount => 'Montaż';
+
+  @override
+  String get equipmentTypeCamera => 'Aparat';
+
+  @override
+  String get equipmentTypeEyepiece => 'Okular';
+
+  @override
+  String get equipmentTypeFilter => 'Filtr';
+
+  @override
+  String get equipmentTypeOther => 'Inne';
+
+  @override
+  String get equipmentAdd => 'Dodaj sprzęt';
+
+  @override
+  String get equipmentSave => 'Zapisz';
+
+  @override
+  String get equipmentDelete => 'Usuń';
+
+  @override
+  String get equipmentDeleteConfirm => 'Usunąć ten element?';
+
+  @override
+  String get equipmentEmpty => 'Brak sprzętu. Dodaj teleskop, montaż lub aparat.';
+
+  @override
+  String get lockAction => 'Zablokuj';
+
+  @override
+  String get versionLabel => 'Wersja';
+
+  @override
+  String get profileTitle => 'Profil';
+
+  @override
+  String get comingSoon => 'Dostępne wkrótce';
 }

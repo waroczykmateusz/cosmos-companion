@@ -445,6 +445,26 @@ abstract class AppLocalizations {
   /// In pl, this message translates to:
   /// **'Nie'**
   String get no;
+
+  String get equipmentTitle;
+  String get equipmentNameLabel;
+  String get equipmentTypeLabel;
+  String get equipmentNotesLabel;
+  String get equipmentTypeTelescope;
+  String get equipmentTypeMount;
+  String get equipmentTypeCamera;
+  String get equipmentTypeEyepiece;
+  String get equipmentTypeFilter;
+  String get equipmentTypeOther;
+  String get equipmentAdd;
+  String get equipmentSave;
+  String get equipmentDelete;
+  String get equipmentDeleteConfirm;
+  String get equipmentEmpty;
+  String get lockAction;
+  String get versionLabel;
+  String get profileTitle;
+  String get comingSoon;
 }
 
 class _AppLocalizationsDelegate

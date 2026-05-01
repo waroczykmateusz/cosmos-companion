@@ -191,4 +191,62 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get no => 'No';
+
+  @override
+  String get equipmentTitle => 'Equipment';
+
+  @override
+  String get equipmentNameLabel => 'Name';
+
+  @override
+  String get equipmentTypeLabel => 'Type';
+
+  @override
+  String get equipmentNotesLabel => 'Notes';
+
+  @override
+  String get equipmentTypeTelescope => 'Telescope';
+
+  @override
+  String get equipmentTypeMount => 'Mount';
+
+  @override
+  String get equipmentTypeCamera => 'Camera';
+
+  @override
+  String get equipmentTypeEyepiece => 'Eyepiece';
+
+  @override
+  String get equipmentTypeFilter => 'Filter';
+
+  @override
+  String get equipmentTypeOther => 'Other';
+
+  @override
+  String get equipmentAdd => 'Add equipment';
+
+  @override
+  String get equipmentSave => 'Save';
+
+  @override
+  String get equipmentDelete => 'Delete';
+
+  @override
+  String get equipmentDeleteConfirm => 'Delete this item?';
+
+  @override
+  String get equipmentEmpty =>
+      'No equipment added yet. Add a telescope, mount or camera.';
+
+  @override
+  String get lockAction => 'Lock';
+
+  @override
+  String get versionLabel => 'Version';
+
+  @override
+  String get profileTitle => 'Profile';
+
+  @override
+  String get comingSoon => 'Coming soon';
 }

@@ -1,10 +1,10 @@
 import 'package:cosmic_companion/core/localization/app_localizations.dart';
-import 'package:cosmic_companion/features/auth/pages/profile_page.dart';
 import 'package:cosmic_companion/features/dashboard/providers/dashboard_providers.dart';
 import 'package:cosmic_companion/features/dashboard/widgets/moon_card.dart';
 import 'package:cosmic_companion/features/dashboard/widgets/night_mode_button.dart';
 import 'package:cosmic_companion/features/dashboard/widgets/seeing_indicator.dart';
 import 'package:cosmic_companion/features/dashboard/widgets/zodiac_card.dart';
+import 'package:cosmic_companion/features/settings/pages/settings_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -21,10 +21,10 @@ class DashboardPage extends ConsumerWidget {
         actions: [
           const NightModeButton(),
           IconButton(
-            icon: const Icon(Icons.person_outline),
+            icon: const Icon(Icons.settings_outlined),
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
-                builder: (_) => const ProfilePage(),
+                builder: (_) => const SettingsPage(),
               ),
             ),
           ),
