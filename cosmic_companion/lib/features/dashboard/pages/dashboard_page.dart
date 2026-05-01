@@ -1,4 +1,5 @@
 import 'package:cosmic_companion/core/localization/app_localizations.dart';
+import 'package:cosmic_companion/features/calendar/pages/calendar_page.dart';
 import 'package:cosmic_companion/features/dashboard/providers/dashboard_providers.dart';
 import 'package:cosmic_companion/features/dashboard/widgets/moon_card.dart';
 import 'package:cosmic_companion/features/dashboard/widgets/night_mode_button.dart';
@@ -20,6 +21,14 @@ class DashboardPage extends ConsumerWidget {
         title: Text(l10n.dashboardTitle),
         actions: [
           const NightModeButton(),
+          IconButton(
+            icon: const Icon(Icons.calendar_month_outlined),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const CalendarPage(),
+              ),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.settings_outlined),
             onPressed: () => Navigator.of(context).push(

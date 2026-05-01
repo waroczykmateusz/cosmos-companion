@@ -249,4 +249,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get comingSoon => 'Coming soon';
+
+  @override
+  String get calendarTitle => 'Calendar';
+
+  @override
+  String get calendarNoEvents => 'No events this month';
+
+  @override
+  String get calendarMoonPhaseEvent => 'Moon Phase';
+
+  @override
+  String planetaryIngressEvent(String body, String sign) =>
+      '$body enters $sign';
+
+  @override
+  String get calendarLabelMoonIngress => 'Moon changes sign';
+
+  @override
+  String get calendarLabelPlanetIngress => 'Planetary ingress';
 }

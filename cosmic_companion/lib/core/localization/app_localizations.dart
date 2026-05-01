@@ -465,6 +465,13 @@ abstract class AppLocalizations {
   String get versionLabel;
   String get profileTitle;
   String get comingSoon;
+
+  String get calendarTitle;
+  String get calendarNoEvents;
+  String get calendarMoonPhaseEvent;
+  String planetaryIngressEvent(String body, String sign);
+  String get calendarLabelMoonIngress;
+  String get calendarLabelPlanetIngress;
 }
 
 class _AppLocalizationsDelegate
