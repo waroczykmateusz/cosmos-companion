@@ -322,4 +322,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get magnitudeLabel => 'Mag.';
+
+  @override
+  String get solarSystemTitle => 'Solar System';
 }

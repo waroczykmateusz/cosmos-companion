@@ -5,10 +5,10 @@ import 'package:cosmic_companion/features/dashboard/widgets/moon_card.dart';
 import 'package:cosmic_companion/features/dashboard/widgets/night_mode_button.dart';
 import 'package:cosmic_companion/features/dashboard/widgets/planets_row.dart';
 import 'package:cosmic_companion/features/dashboard/widgets/seeing_indicator.dart';
-import 'package:cosmic_companion/features/dashboard/widgets/solar_system_card.dart';
 import 'package:cosmic_companion/features/dashboard/widgets/zodiac_card.dart';
 import 'package:cosmic_companion/features/map/pages/light_pollution_map_page.dart';
 import 'package:cosmic_companion/features/settings/pages/settings_page.dart';
+import 'package:cosmic_companion/features/solar_system/pages/solar_system_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -26,26 +26,31 @@ class DashboardPage extends ConsumerWidget {
           const NightModeButton(),
           IconButton(
             icon: const Icon(Icons.calendar_month_outlined),
+            tooltip: l10n.calendarTitle,
             onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => const CalendarPage(),
-              ),
+              MaterialPageRoute<void>(builder: (_) => const CalendarPage()),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.hub_outlined),
+            tooltip: l10n.solarSystemTitle,
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const SolarSystemPage()),
             ),
           ),
           IconButton(
             icon: const Icon(Icons.map_outlined),
+            tooltip: l10n.mapTitle,
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
-                builder: (_) => const LightPollutionMapPage(),
-              ),
+                  builder: (_) => const LightPollutionMapPage()),
             ),
           ),
           IconButton(
             icon: const Icon(Icons.settings_outlined),
+            tooltip: l10n.settingsTitle,
             onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => const SettingsPage(),
-              ),
+              MaterialPageRoute<void>(builder: (_) => const SettingsPage()),
             ),
           ),
         ],
@@ -63,8 +68,6 @@ class DashboardPage extends ConsumerWidget {
             MoonCard(),
             SizedBox(height: 12),
             ZodiacCard(),
-            SizedBox(height: 12),
-            SolarSystemCard(),
             SizedBox(height: 12),
             SeeingIndicator(),
             SizedBox(height: 20),

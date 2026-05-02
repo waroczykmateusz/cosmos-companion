@@ -697,6 +697,12 @@ abstract class AppLocalizations {
   /// In pl, this message translates to:
   /// **'Jasność'**
   String get magnitudeLabel;
+
+  /// No description provided for @solarSystemTitle.
+  ///
+  /// In pl, this message translates to:
+  /// **'Układ Słoneczny'**
+  String get solarSystemTitle;
 }
 
 class _AppLocalizationsDelegate

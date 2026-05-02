@@ -169,5 +169,8 @@
   "distanceLabel": "Odl.",
   "@distanceLabel": {},
   "magnitudeLabel": "Jasność",
-  "@magnitudeLabel": {}
+  "@magnitudeLabel": {},
+
+  "solarSystemTitle": "Układ Słoneczny",
+  "@solarSystemTitle": {}
 }
