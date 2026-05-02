@@ -74,21 +74,24 @@ class _LightPollutionMapPageState
                 children: [
                   TileLayer(
                     urlTemplate:
-                        'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',
+                        'https://{s}.basemaps.cartocdn.com/dark_matter/{z}/{x}/{y}.png',
                     subdomains: const ['a', 'b', 'c', 'd'],
-                    retinaMode: MediaQuery.of(context).devicePixelRatio > 1,
                     userAgentPackageName: 'com.waroczyk.cosmic_companion',
+                    fallbackUrl:
+                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                   ),
                   if (_showOverlay)
-                    Opacity(
-                      opacity: 0.65,
-                      child: TileLayer(
-                        urlTemplate:
-                            'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/'
-                            'VIIRS_Black_Marble_CityLights_2016_v2/default/2016-01/'
-                            'GoogleMapsCompatible/{z}/{y}/{x}.jpg',
-                        userAgentPackageName: 'com.waroczyk.cosmic_companion',
-                      ),
+                    CircleLayer(
+                      circles: [
+                        CircleMarker(
+                          point: center,
+                          radius: 60000,
+                          color: bortleLevel.color.withValues(alpha: 0.18),
+                          borderColor: bortleLevel.color.withValues(alpha: 0.7),
+                          borderStrokeWidth: 2,
+                          useRadiusInMeter: true,
+                        ),
+                      ],
                     ),
                   MarkerLayer(
                     markers: [

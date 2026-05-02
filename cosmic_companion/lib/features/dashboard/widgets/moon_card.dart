@@ -3,6 +3,7 @@ import 'package:cosmic_companion/data/models/celestial_body.dart';
 import 'package:cosmic_companion/data/models/moon_phase.dart';
 import 'package:cosmic_companion/features/dashboard/providers/dashboard_providers.dart';
 import 'package:cosmic_companion/features/dashboard/widgets/body_detail_sheet.dart';
+import 'package:cosmic_companion/features/dashboard/widgets/moon_phase_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -32,53 +33,73 @@ class MoonCard extends ConsumerWidget {
               '${l10n.error}: $e',
               style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
-            data: (phase) => Column(
+            data: (phase) => Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  l10n.moonPhaseLabel,
-                  style: Theme.of(context).textTheme.labelMedium,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _phaseName(l10n, phase.name),
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  l10n.illuminationPercent(phase.illuminationPercent.round()),
-                ),
-                if (moonAsync.valueOrNull case final moon?) ...[
-                  const SizedBox(height: 8),
-                  Row(
+                // Left: text info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(
-                        moon.isAboveHorizon
-                            ? Icons.keyboard_arrow_up
-                            : Icons.keyboard_arrow_down,
-                        size: 16,
-                      ),
                       Text(
-                        moon.isAboveHorizon
-                            ? 'Alt ${moon.altitude.toStringAsFixed(1)}°'
-                            : 'Pod horyzontem',
-                        style: Theme.of(context).textTheme.bodySmall,
+                        l10n.moonPhaseLabel,
+                        style: Theme.of(context).textTheme.labelMedium,
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(height: 4),
                       Text(
-                        moon.isRetrograde ? 'Rx' : '',
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodySmall
-                            ?.copyWith(color: Colors.orange),
+                        _phaseName(l10n, phase.name),
+                        style: Theme.of(context).textTheme.headlineSmall,
                       ),
+                      const SizedBox(height: 4),
+                      Text(
+                        l10n.illuminationPercent(
+                          phase.illuminationPercent.round(),
+                        ),
+                      ),
+                      if (moonAsync.valueOrNull case final moon?) ...[
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Icon(
+                              moon.isAboveHorizon
+                                  ? Icons.keyboard_arrow_up
+                                  : Icons.keyboard_arrow_down,
+                              size: 16,
+                            ),
+                            Text(
+                              moon.isAboveHorizon
+                                  ? 'Alt ${moon.altitude.toStringAsFixed(1)}°'
+                                  : 'Pod horyzontem',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              moon.isRetrograde ? 'Rx' : '',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(color: Colors.orange),
+                            ),
+                          ],
+                        ),
+                        if (_hasRiseSetData(moon)) ...[
+                          const SizedBox(height: 12),
+                          _RiseSetMiniRow(
+                            moon: moon,
+                            timeFmt: _timeFmt,
+                            l10n: l10n,
+                          ),
+                        ],
+                      ],
                     ],
                   ),
-                  if (_hasRiseSetData(moon)) ...[
-                    const SizedBox(height: 12),
-                    _RiseSetMiniRow(moon: moon, timeFmt: _timeFmt, l10n: l10n),
-                  ],
-                ],
+                ),
+                // Right: graphical moon phase
+                const SizedBox(width: 12),
+                MoonPhaseWidget(
+                  phaseAngle: phase.phaseAngle,
+                  illuminationPercent: phase.illuminationPercent,
+                ),
               ],
             ),
           ),
