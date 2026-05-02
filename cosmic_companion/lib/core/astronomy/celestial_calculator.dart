@@ -28,6 +28,14 @@ class CelestialCalculator {
     // RA z SwissEph SEFLG_EQUATORIAL jest w stopniach → konwersja do godzin
     final raHours = eq.longitude / 15.0;
 
+    final today = DateTime.utc(utc.year, utc.month, utc.day);
+    final midnightJD = TimeUtils.toJulianDay(today);
+    final rst =
+        EphemerisService.calcRiseSetTransitJD(swephBody, midnightJD, location);
+
+    DateTime? jdToDateTime(double? jd) =>
+        jd != null ? TimeUtils.fromJulianDay(jd) : null;
+
     return CelestialBody(
       id: id,
       displayName: _displayName(id),
@@ -46,6 +54,9 @@ class CelestialCalculator {
       signDegree: signDeg,
       house: null,
       isRetrograde: ecl.speedInLongitude < 0,
+      riseTime: jdToDateTime(rst.riseJD),
+      transitTime: jdToDateTime(rst.transitJD),
+      setTime: jdToDateTime(rst.setJD),
     );
   }
 

@@ -298,4 +298,28 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get horoscopeWheelTitle => 'Układ planet';
+
+  @override
+  String get riseLabel => 'Wschód';
+
+  @override
+  String get transitLabel => 'Kulminacja';
+
+  @override
+  String get setLabel => 'Zachód';
+
+  @override
+  String get altitudeLabel => 'Wys.';
+
+  @override
+  String get azimuthLabel => 'Az.';
+
+  @override
+  String get eclipticLonLabel => 'Ekl.';
+
+  @override
+  String get distanceLabel => 'Odl.';
+
+  @override
+  String get magnitudeLabel => 'Jasność';
 }

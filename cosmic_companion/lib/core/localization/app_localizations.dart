@@ -649,6 +649,54 @@ abstract class AppLocalizations {
   /// In pl, this message translates to:
   /// **'Układ planet'**
   String get horoscopeWheelTitle;
+
+  /// No description provided for @riseLabel.
+  ///
+  /// In pl, this message translates to:
+  /// **'Wschód'**
+  String get riseLabel;
+
+  /// No description provided for @transitLabel.
+  ///
+  /// In pl, this message translates to:
+  /// **'Kulminacja'**
+  String get transitLabel;
+
+  /// No description provided for @setLabel.
+  ///
+  /// In pl, this message translates to:
+  /// **'Zachód'**
+  String get setLabel;
+
+  /// No description provided for @altitudeLabel.
+  ///
+  /// In pl, this message translates to:
+  /// **'Wys.'**
+  String get altitudeLabel;
+
+  /// No description provided for @azimuthLabel.
+  ///
+  /// In pl, this message translates to:
+  /// **'Az.'**
+  String get azimuthLabel;
+
+  /// No description provided for @eclipticLonLabel.
+  ///
+  /// In pl, this message translates to:
+  /// **'Ekl.'**
+  String get eclipticLonLabel;
+
+  /// No description provided for @distanceLabel.
+  ///
+  /// In pl, this message translates to:
+  /// **'Odl.'**
+  String get distanceLabel;
+
+  /// No description provided for @magnitudeLabel.
+  ///
+  /// In pl, this message translates to:
+  /// **'Jasność'**
+  String get magnitudeLabel;
 }
 
 class _AppLocalizationsDelegate

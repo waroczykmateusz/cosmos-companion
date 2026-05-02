@@ -152,5 +152,22 @@
   "belowHorizon": "Pod horyzontem",
 
   "horoscopeWheelTitle": "Układ planet",
-  "@horoscopeWheelTitle": {}
+  "@horoscopeWheelTitle": {},
+
+  "riseLabel": "Wschód",
+  "@riseLabel": {},
+  "transitLabel": "Kulminacja",
+  "@transitLabel": {},
+  "setLabel": "Zachód",
+  "@setLabel": {},
+  "altitudeLabel": "Wys.",
+  "@altitudeLabel": {},
+  "azimuthLabel": "Az.",
+  "@azimuthLabel": {},
+  "eclipticLonLabel": "Ekl.",
+  "@eclipticLonLabel": {},
+  "distanceLabel": "Odl.",
+  "@distanceLabel": {},
+  "magnitudeLabel": "Jasność",
+  "@magnitudeLabel": {}
 }

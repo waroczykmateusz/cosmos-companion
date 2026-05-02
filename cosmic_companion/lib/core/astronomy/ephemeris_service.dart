@@ -56,6 +56,37 @@ abstract final class EphemerisService {
   static List<double> calcPhenomena(HeavenlyBody body, double jd) =>
       Sweph.swe_pheno_ut(jd, body, SwephFlag.SEFLG_SWIEPH);
 
+  /// Rise (SE_CALC_RISE), meridian transit (SE_CALC_MTRANSIT), and set
+  /// (SE_CALC_SET) Julian Day numbers starting from [midnightJD].
+  /// Returns null for each event that doesn't occur today (circumpolar /
+  /// never-rises).
+  static ({double? riseJD, double? transitJD, double? setJD})
+      calcRiseSetTransitJD(
+    HeavenlyBody body,
+    double midnightJD,
+    GeoLocation location,
+  ) {
+    final geoPos = GeoPosition(
+      location.longitude,
+      location.latitude,
+      location.elevationMeters,
+    );
+    double? calc(RiseSetTransitFlag flag) => Sweph.swe_rise_trans(
+          midnightJD,
+          body,
+          SwephFlag.SEFLG_SWIEPH,
+          flag,
+          geoPos,
+          1013.25,
+          15,
+        );
+    return (
+      riseJD: calc(RiseSetTransitFlag.SE_CALC_RISE),
+      transitJD: calc(RiseSetTransitFlag.SE_CALC_MTRANSIT),
+      setJD: calc(RiseSetTransitFlag.SE_CALC_SET),
+    );
+  }
+
   static HeavenlyBody toSwephBody(CelestialBodyId id) => switch (id) {
         CelestialBodyId.sun => HeavenlyBody.SE_SUN,
         CelestialBodyId.moon => HeavenlyBody.SE_MOON,

@@ -1,6 +1,7 @@
 import 'package:cosmic_companion/core/localization/app_localizations.dart';
 import 'package:cosmic_companion/data/models/celestial_body.dart';
 import 'package:cosmic_companion/features/dashboard/providers/dashboard_providers.dart';
+import 'package:cosmic_companion/features/dashboard/widgets/body_detail_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -16,24 +17,30 @@ class PlanetCard extends ConsumerWidget {
     return SizedBox(
       width: 130,
       child: Card(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: bodyAsync.when(
-            loading: () => const Center(
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: bodyAsync.valueOrNull != null
+              ? () => showBodyDetailSheet(context, bodyAsync.value!)
+              : null,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: bodyAsync.when(
+              loading: () => const Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
               ),
-            ),
-            error: (e, _) => Center(
-              child: Icon(
-                Icons.error_outline,
-                size: 18,
-                color: Theme.of(context).colorScheme.error,
+              error: (e, _) => Center(
+                child: Icon(
+                  Icons.error_outline,
+                  size: 18,
+                  color: Theme.of(context).colorScheme.error,
+                ),
               ),
+              data: (body) => _PlanetCardContent(body: body),
             ),
-            data: (body) => _PlanetCardContent(body: body),
           ),
         ),
       ),

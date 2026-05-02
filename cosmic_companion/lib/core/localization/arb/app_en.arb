@@ -97,5 +97,14 @@
   "belowHorizon": "Below horizon",
 
   "horoscopeWheelTitle": "Planet positions",
-  "@horoscopeWheelTitle": {}
+  "@horoscopeWheelTitle": {},
+
+  "riseLabel": "Rise",
+  "transitLabel": "Transit",
+  "setLabel": "Set",
+  "altitudeLabel": "Alt.",
+  "azimuthLabel": "Az.",
+  "eclipticLonLabel": "Ecl.",
+  "distanceLabel": "Dist.",
+  "magnitudeLabel": "Mag."
 }

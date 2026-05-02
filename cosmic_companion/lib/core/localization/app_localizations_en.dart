@@ -298,4 +298,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get horoscopeWheelTitle => 'Planet positions';
+
+  @override
+  String get riseLabel => 'Rise';
+
+  @override
+  String get transitLabel => 'Transit';
+
+  @override
+  String get setLabel => 'Set';
+
+  @override
+  String get altitudeLabel => 'Alt.';
+
+  @override
+  String get azimuthLabel => 'Az.';
+
+  @override
+  String get eclipticLonLabel => 'Ecl.';
+
+  @override
+  String get distanceLabel => 'Dist.';
+
+  @override
+  String get magnitudeLabel => 'Mag.';
 }
