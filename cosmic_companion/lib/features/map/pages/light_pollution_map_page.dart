@@ -80,18 +80,24 @@ class _LightPollutionMapPageState
                     fallbackUrl:
                         'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                   ),
+                  // NASA VIIRS Black Marble — artificial nighttime light
+                  // intensity from satellite. Bright = high light pollution.
+                  // GIBS REST: {TileMatrix}/{TileRow}/{TileCol} → {z}/{y}/{x}
                   if (_showOverlay)
-                    CircleLayer(
-                      circles: [
-                        CircleMarker(
-                          point: center,
-                          radius: 60000,
-                          color: bortleLevel.color.withValues(alpha: 0.18),
-                          borderColor: bortleLevel.color.withValues(alpha: 0.7),
-                          borderStrokeWidth: 2,
-                          useRadiusInMeter: true,
-                        ),
-                      ],
+                    Opacity(
+                      opacity: 0.80,
+                      child: TileLayer(
+                        urlTemplate:
+                            'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/'
+                            'VIIRS_Black_Marble/default/2016-01-01/'
+                            'GoogleMapsCompatible/{z}/{y}/{x}.jpg',
+                        fallbackUrl:
+                            'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/'
+                            'VIIRS_SNPP_CityLights_Monthly/default/2019-01/'
+                            'GoogleMapsCompatible/{z}/{y}/{x}.jpg',
+                        userAgentPackageName: 'com.waroczyk.cosmic_companion',
+                        errorTileCallback: (_, __, ___) {},
+                      ),
                     ),
                   MarkerLayer(
                     markers: [
