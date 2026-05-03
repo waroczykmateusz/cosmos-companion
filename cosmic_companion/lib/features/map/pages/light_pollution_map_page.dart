@@ -1,13 +1,12 @@
 import 'package:cosmic_companion/core/localization/app_localizations.dart';
 import 'package:cosmic_companion/features/dashboard/providers/dashboard_providers.dart';
 import 'package:cosmic_companion/features/map/domain/bortle_classifier.dart';
+import 'package:cosmic_companion/features/map/providers/map_providers.dart';
 import 'package:cosmic_companion/features/map/widgets/bortle_legend.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
-
-const _classifierProvider = BortleClassifier();
 
 class LightPollutionMapPage extends ConsumerStatefulWidget {
   const LightPollutionMapPage({super.key});
@@ -59,10 +58,9 @@ class _LightPollutionMapPageState
         ),
         data: (location) {
           final center = LatLng(location.latitude, location.longitude);
-          final bortleLevel = _classifierProvider.estimate(
-            location.latitude,
-            location.longitude,
-          );
+          final bortleLevel = ref
+              .watch(bortleLevelProvider)
+              .valueOrNull ?? BortleLevel.one;
 
           return Stack(
             children: [
@@ -80,21 +78,18 @@ class _LightPollutionMapPageState
                     fallbackUrl:
                         'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                   ),
-                  // NASA VIIRS Black Marble — artificial nighttime light
-                  // intensity from satellite. Bright = high light pollution.
-                  // GIBS REST: {TileMatrix}/{TileRow}/{TileCol} → {z}/{y}/{x}
+                  // NASA VIIRS Black Marble (annual composite 2016).
+                  // GIBS TileMatrixSet: GoogleMapsCompatible_Level8 (max z=8).
+                  // URL order: {TileMatrix}/{TileRow}/{TileCol} = {z}/{y}/{x}
                   if (_showOverlay)
                     Opacity(
-                      opacity: 0.80,
+                      opacity: 0.85,
                       child: TileLayer(
                         urlTemplate:
                             'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/'
                             'VIIRS_Black_Marble/default/2016-01-01/'
-                            'GoogleMapsCompatible/{z}/{y}/{x}.jpg',
-                        fallbackUrl:
-                            'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/'
-                            'VIIRS_SNPP_CityLights_Monthly/default/2019-01/'
-                            'GoogleMapsCompatible/{z}/{y}/{x}.jpg',
+                            'GoogleMapsCompatible_Level8/{z}/{y}/{x}.png',
+                        maxNativeZoom: 8,
                         userAgentPackageName: 'com.waroczyk.cosmic_companion',
                         errorTileCallback: (_, __, ___) {},
                       ),
