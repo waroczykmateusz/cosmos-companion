@@ -3,6 +3,7 @@ import 'package:cosmic_companion/data/models/celestial_body.dart';
 import 'package:cosmic_companion/data/models/moon_phase.dart';
 import 'package:cosmic_companion/features/calendar/domain/astro_event.dart';
 import 'package:cosmic_companion/features/calendar/providers/calendar_providers.dart';
+import 'package:cosmic_companion/features/dso/providers/dso_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -80,14 +81,18 @@ class _MonthHeader extends ConsumerWidget {
 
 // ── Event list grouped by day ─────────────────────────────────────────────────
 
-class _EventList extends StatelessWidget {
+class _EventList extends ConsumerWidget {
   const _EventList({required this.events, required this.month});
 
   final List<AstroEvent> events;
   final DateTime month;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final badgeDays = ref
+        .watch(dsoBadgeMonthProvider(month))
+        .valueOrNull ?? const <int>{};
+
     // Group events by local date
     final grouped = <DateTime, List<AstroEvent>>{};
     for (final e in events) {
@@ -102,17 +107,26 @@ class _EventList extends StatelessWidget {
       itemCount: days.length,
       itemBuilder: (context, i) {
         final day = days[i];
-        return _DaySection(day: day, events: grouped[day]!);
+        return _DaySection(
+          day: day,
+          events: grouped[day]!,
+          hasDsoBadge: badgeDays.contains(day.day),
+        );
       },
     );
   }
 }
 
 class _DaySection extends StatelessWidget {
-  const _DaySection({required this.day, required this.events});
+  const _DaySection({
+    required this.day,
+    required this.events,
+    required this.hasDsoBadge,
+  });
 
   final DateTime day;
   final List<AstroEvent> events;
+  final bool hasDsoBadge;
 
   @override
   Widget build(BuildContext context) {
@@ -149,6 +163,24 @@ class _DaySection extends StatelessWidget {
                     'DZIŚ',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                           color: Theme.of(context).colorScheme.onPrimary,
+                        ),
+                  ),
+                ),
+              ],
+              if (hasDsoBadge) ...[
+                const SizedBox(width: 6),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.indigo.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: Colors.indigo),
+                  ),
+                  child: Text(
+                    '★ DSO',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: Colors.indigo,
                         ),
                   ),
                 ),

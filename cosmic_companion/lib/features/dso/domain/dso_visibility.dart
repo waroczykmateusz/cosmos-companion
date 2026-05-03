@@ -156,7 +156,7 @@ abstract final class DsoVisibility {
           }();
     final b = a + 1524;
     final c = ((b - 122.1) / 365.25).floor();
-    final dd = ((365.25 * c)).floor();
+    final dd = (365.25 * c).floor();
     final e = ((b - dd) / 30.6001).floor();
     final day = b - dd - (30.6001 * e).floor();
     final month = e < 14 ? e - 1 : e - 13;

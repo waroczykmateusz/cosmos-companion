@@ -267,25 +267,4 @@ class _DsoDetailSheet extends StatelessWidget {
         ),
       );
 
-  String _dsoTypeEmoji(DsoType type) => switch (type) {
-        DsoType.galaxy => '🌌',
-        DsoType.openCluster => '✨',
-        DsoType.globularCluster => '⭐',
-        DsoType.emissionNebula => '🔴',
-        DsoType.reflectionNebula => '🔵',
-        DsoType.darkNebula => '⬛',
-        DsoType.planetaryNebula => '🟢',
-        DsoType.supernovaRemnant => '💥',
-      };
-
-  String _dsoTypeName(DsoType type) => switch (type) {
-        DsoType.galaxy => 'Galaktyka',
-        DsoType.openCluster => 'Gromada otwarta',
-        DsoType.globularCluster => 'Gromada kulista',
-        DsoType.emissionNebula => 'Mgławica emisyjna',
-        DsoType.reflectionNebula => 'Mgławica odbiciowa',
-        DsoType.darkNebula => 'Mgławica ciemna',
-        DsoType.planetaryNebula => 'Mgławica planetarna',
-        DsoType.supernovaRemnant => 'Pozostałość supernowej',
-      };
 }

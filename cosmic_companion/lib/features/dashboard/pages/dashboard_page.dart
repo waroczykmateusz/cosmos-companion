@@ -1,11 +1,13 @@
 import 'package:cosmic_companion/core/localization/app_localizations.dart';
 import 'package:cosmic_companion/features/calendar/pages/calendar_page.dart';
 import 'package:cosmic_companion/features/dashboard/providers/dashboard_providers.dart';
+import 'package:cosmic_companion/features/dashboard/widgets/dso_card.dart';
 import 'package:cosmic_companion/features/dashboard/widgets/moon_card.dart';
 import 'package:cosmic_companion/features/dashboard/widgets/night_mode_button.dart';
 import 'package:cosmic_companion/features/dashboard/widgets/planets_row.dart';
 import 'package:cosmic_companion/features/dashboard/widgets/seeing_indicator.dart';
 import 'package:cosmic_companion/features/dashboard/widgets/zodiac_card.dart';
+import 'package:cosmic_companion/features/dso/providers/dso_providers.dart';
 import 'package:cosmic_companion/features/map/pages/light_pollution_map_page.dart';
 import 'package:cosmic_companion/features/settings/pages/settings_page.dart';
 import 'package:cosmic_companion/features/solar_system/pages/solar_system_page.dart';
@@ -60,7 +62,8 @@ class DashboardPage extends ConsumerWidget {
           ref
             ..invalidate(currentLocationProvider)
             ..invalidate(moonPhaseProvider)
-            ..invalidate(moonBodyProvider);
+            ..invalidate(moonBodyProvider)
+            ..invalidate(visibleDsoTodayProvider);
         },
         child: ListView(
           padding: const EdgeInsets.all(16),
@@ -72,6 +75,8 @@ class DashboardPage extends ConsumerWidget {
             SeeingIndicator(),
             SizedBox(height: 20),
             PlanetsRow(),
+            SizedBox(height: 12),
+            DsoCard(),
           ],
         ),
       ),
