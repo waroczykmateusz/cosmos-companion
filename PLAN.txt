@@ -1,0 +1,593 @@
+# Cosmic Companion — Plan MVP (Flutter, offline-first)
+
+## Context
+
+Budujemy nową aplikację mobilną Flutter dla pasjonatów astrofotografii i astrologii. Cel: hybrydowe doświadczenie łączące precyzyjne dane naukowe (pozycje ciał niebieskich, widoczność, fazy księżyca) z warstwą symboliczną (znaki zodiaku, domy, aspekty, tranzyty). Aplikacja musi działać offline (sesje w terenie, daleko od miast), z UI zoptymalizowanym pod ciemne niebo (Night Vision First, Red Mode).
+
+Repo: cosmic-companion (GitHub), branch roboczy cosmic-companion, merge do master przy gotowych funkcjach.
+
+Pierwszy kamień milowy: Dashboard MVP "Gdańsk Center" — lokalizacja GPS, faza Księżyca, znak zodiaku Księżyca, mock seeing, Night Mode toggle.
+
+---
+
+## Decyzje architektoniczne (potwierdzone z użytkownikiem)
+
+| Obszar          | Wybór                                            | Uzasadnienie |
+|-----------------|--------------------------------------------------|--------------|
+| Astro engine    | Swiss Ephemeris (FFI) + astronomy_engine_dart    | SwissEph: profesjonalna astrologia (domy Placidus/Koch, aspekty, tranzyty). astronomy_engine: szybkie pozycje ciał + widoczność/risetimes. |
+| State mgmt      | Riverpod 2.x                                     | Mniej boilerplate niż bloc, type-safe DI, reaktywne providers idealnie pasują do strumieni czasu (live update pozycji ciał). |
+| DB              | Drift (sqlite)                                   | Aktywnie rozwijany, type-safe SQL, reaktywne queries (watchSingle), bezpieczne migracje. |
+| i18n            | PL + EN od MVP                                   | flutter_localizations + intl + .arb files od dnia 1. |
+| Mapy            | maplibre_gl                                      | Light Pollution Map z custom tile sourcem (Bortle/VIIRS data). |
+| Modele          | freezed + json_serializable                      | Immutable data classes, copyWith, equality. |
+| Testy           | flutter_test + mocktail                          | Standard Flutter, brak code-genu dla mocków. |
+| Auth (MVP)      | Local profile + PIN/biometria                    | Offline-first. Pluggable AuthProvider interface — w MVP LocalAuthProvider, potem swap na SupabaseAuthProvider bez refaktoru kodu konsumentów. |
+| Secure storage  | flutter_secure_storage                           | Keystore (Android) / Keychain (iOS). NIGDY shared_preferences dla wrażliwych danych. |
+| Compliance      | GDPR-ready od MVP                                | Telemetria opt-in, hard purge function, no PII in logs. Privacy policy stub w settings. |
+
+---
+
+## Struktura projektu
+
+cosmic_companion/
+├── lib/
+│   ├── main.dart
+│   ├── app.dart                            # MaterialApp + ThemeProvider + Router
+│   │
+│   ├── core/
+│   │   ├── astronomy/
+│   │   │   ├── ephemeris_service.dart      # SwissEph FFI wrapper (high-level API)
+│   │   │   ├── astronomy_engine_service.dart  # astronomy_engine_dart adapter
+│   │   │   ├── celestial_calculator.dart   # fasada: oblicz pozycje, fazy, aspekty
+│   │   │   └── coordinate_systems.dart     # konwersje RA/Dec ↔ Alt/Az ↔ ekliptyczne
+│   │   ├── auth/
+│   │   │   ├── auth_provider.dart          # abstract interface (sealed class)
+│   │   │   ├── local_auth_provider.dart    # MVP: PIN/biometric impl
+│   │   │   ├── supabase_auth_provider.dart # FUTURE: stub, tylko sygnatury
+│   │   │   ├── auth_state.dart             # @freezed: Authenticated/Unauthenticated/Locked
+│   │   │   └── secure_storage.dart         # wrapper na flutter_secure_storage
+│   │   ├── theme/
+│   │   │   ├── app_theme.dart              # ColorScheme.dark, OLED-true-black
+│   │   │   ├── night_mode_overlay.dart     # ColorFilter red overlay widget
+│   │   │   └── theme_provider.dart         # Riverpod StateNotifier (normal/night/red)
+│   │   ├── localization/
+│   │   │   ├── l10n.yaml
+│   │   │   └── arb/{app_pl.arb, app_en.arb}
+│   │   ├── routing/
+│   │   │   └── app_router.dart             # go_router config + auth guards (redirect na /lock gdy locked)
+│   │   ├── di/
+│   │   │   └── providers.dart              # Riverpod global providers (DB, services, auth)
+│   │   ├── privacy/
+│   │   │   ├── telemetry_consent.dart      # opt-in dla Sentry/analytics
+│   │   │   ├── data_purger.dart            # GDPR: hard delete user data + secure storage wipe
+│   │   │   └── pii_filter.dart             # filtr przed Sentry beforeSend (usuwa PII z logów)
+│   │   ├── utils/
+│   │   │   ├── geo.dart                    # konwersje koordynatów GPS
+│   │   │   └── time.dart                   # UTC ↔ JD (Julian Day) conversions
+│   │   └── error/
+│   │       └── failures.dart               # sealed Failure types
+│   │
+│   ├── data/
+│   │   ├── db/
+│   │   │   ├── database.dart               # Drift database class
+│   │   │   ├── tables/
+│   │   │   │   ├── session_logs_table.dart # logi sesji obserwacyjnych
+│   │   │   │   ├── equipment_table.dart    # profil sprzętu (teleskop, montaż)
+│   │   │   │   ├── astro_events_table.dart # cache wydarzeń astro
+│   │   │   │   └── natal_chart_table.dart  # zapisane karty natalne
+│   │   │   └── daos/                        # query objects per table
+│   │   ├── repositories/
+│   │   │   ├── weather_repository.dart     # Open-Meteo / 7Timer (cache-first)
+│   │   │   ├── light_pollution_repository.dart
+│   │   │   └── location_repository.dart    # geolocator + permissions
+│   │   └── models/
+│   │       ├── celestial_body.dart         # @freezed hybrid model (patrz niżej)
+│   │       ├── moon_phase.dart
+│   │       ├── seeing_forecast.dart
+│   │       └── zodiac_sign.dart            # enum + extensions
+│   │
+│   └── features/
+│       ├── dashboard/                       # MVP
+│       │   ├── presentation/
+│       │   │   ├── dashboard_page.dart
+│       │   │   ├── widgets/{moon_card.dart, zodiac_card.dart, seeing_indicator.dart, night_mode_button.dart}
+│       │   │   └── providers/dashboard_providers.dart  # Riverpod state
+│       │   └── domain/
+│       │       └── usecases/get_dashboard_snapshot.dart
+│       ├── calendar/                        # MVP+1
+│       │   ├── presentation/{calendar_page.dart, widgets/}
+│       │   └── domain/{transit_calculator.dart, event_aggregator.dart}
+│       ├── map/                             # MVP+1
+│       │   ├── presentation/{light_pollution_map_page.dart, widgets/bortle_legend.dart}
+│       │   └── domain/{bortle_classifier.dart}
+│       ├── auth/                            # MVP — local profile + PIN/biometric
+│       │   ├── presentation/
+│       │   │   ├── onboarding_page.dart     # pierwsze uruchomienie: nick + setup PIN
+│       │   │   ├── lock_screen_page.dart    # PIN/biometric prompt po cold start
+│       │   │   ├── profile_page.dart        # edycja profilu, zmiana PIN, "Promote to cloud account" (disabled w MVP)
+│       │   │   └── widgets/{pin_keypad.dart, biometric_button.dart}
+│       │   └── domain/usecases/{create_local_profile.dart, unlock_with_pin.dart, unlock_with_biometric.dart}
+│       ├── settings/                        # MVP
+│       │   └── presentation/
+│       │       ├── settings_page.dart
+│       │       ├── equipment_form.dart
+│       │       ├── privacy_settings_page.dart   # opt-in telemetria, "Delete all my data" (GDPR)
+│       │       └── about_page.dart              # version, privacy policy link, terms
+│       │
+│       ├── plate_solving/                   # FUTURE — placeholder folder, README only
+│       │   └── README.md                    # "Plate Solving offline (Tycho-2 katalog + algorytm). Zarezerwowane."
+│       ├── ar_sky_map/                      # FUTURE — placeholder folder, README only
+│       │   └── README.md                    # "AR view via arcore_flutter_plugin/arkit_plugin. Camera perm w manifest."
+│       ├── exporters/                       # FUTURE — placeholder folder, README only
+│       │   └── README.md                    # "Stellarium .fov / SkySafari .ssc / TIFF EXIF exporters."
+│       └── sync/                            # FUTURE — placeholder folder, README only
+│           └── README.md                    # "Supabase sync. Schema już sync-ready (UUID + soft delete + updatedAt)."
+│
+├── assets/
+│   ├── ephemeris/                          # SwissEph .se1 files (~2MB, lata 1800-2400)
+│   ├── icons/zodiac/                       # SVG ikony znaków
+│   └── tiles/                              # offline light pollution tiles (opcjonalnie)
+│
+├── test/
+│   ├── core/astronomy/{ephemeris_service_test.dart, celestial_calculator_test.dart}
+│   ├── data/repositories/
+│   └── features/dashboard/dashboard_providers_test.dart
+│
+├── pubspec.yaml
+└── analysis_options.yaml                    # very_good_analysis lints
+
+Zasada warstw: presentation → domain → data → core. Features nie sięgają bezpośrednio do innych features.
+
+---
+
+## Model hybrydowy: CelestialBody
+
+Plik: lib/data/models/celestial_body.dart
+
+```dart
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'celestial_body.freezed.dart';
+part 'celestial_body.g.dart';
+
+/// Hybrydowy model ciała niebieskiego — łączy dane astronomiczne (pozycja
+/// na sferze niebieskiej, jasność) z warstwą astrologiczną (znak zodiaku,
+/// dom horoskopowy, aspekty względem innych ciał).
+///
+/// Wszystkie pola pozycyjne są snapshotem dla konkretnego momentu (epoch)
+/// i obserwatora (observerLocation). Do długoterminowych obliczeń używaj
+/// EphemerisService.computeAt(epoch, location).
+@freezed
+class CelestialBody with _$CelestialBody {
+  const factory CelestialBody({
+    required CelestialBodyId id,            // SUN, MOON, MERCURY, ..., PLUTO, NORTH_NODE, CHIRON
+    required String displayName,             // "Księżyc" / "Moon" — z l10n
+    required DateTime epoch,                 // UTC, dla którego liczono pozycję
+    required GeoLocation observerLocation,   // lat/lon/elev obserwatora
+
+    // === ASTRONOMIA (równikowy układ J2000) ===
+    required double rightAscension,          // [h] 0..24, rektascensja
+    required double declination,              // [°] -90..90, deklinacja
+    required double distanceAU,              // [AU] odległość od Ziemi
+    required double apparentMagnitude,       // jasność wizualna (Słońce: -26.7, Wenus max: -4.6)
+    required double altitude,                 // [°] wysokość nad horyzontem (po refrakcji)
+    required double azimuth,                  // [°] 0=N, 90=E, 180=S, 270=W
+    required bool isAboveHorizon,
+    DateTime? riseTime,                       // null = ciało okołobiegunowe lub niewidoczne
+    DateTime? transitTime,                    // moment kulminacji
+    DateTime? setTime,
+
+    // === ASTROLOGIA (układ ekliptyczny, geocentryczny) ===
+    required double eclipticLongitude,        // [°] 0..360, długość ekliptyczna
+    required double eclipticLatitude,         // [°] szerokość ekliptyczna
+    required ZodiacSign zodiacSign,           // znak na podstawie eclipticLongitude
+    required double signDegree,               // [°] 0..30, pozycja w obrębie znaku
+    required AstrologicalHouse? house,        // dom 1-12, null gdy nie liczymy karty
+    required bool isRetrograde,               // ruch wsteczny
+    @Default([]) List<Aspect> aspects,        // aspekty do innych ciał (cieżkie tylko: koniunkcja/opozycja/kwadratura/trygon/sekstyl)
+  }) = _CelestialBody;
+
+  factory CelestialBody.fromJson(Map<String, dynamic> json) =>
+      _$CelestialBodyFromJson(json);
+}
+
+enum CelestialBodyId {
+  sun, moon, mercury, venus, mars, jupiter, saturn, uranus, neptune, pluto,
+  northNode, southNode, chiron, lilith,
+}
+
+@freezed
+class Aspect with _$Aspect {
+  const factory Aspect({
+    required CelestialBodyId target,
+    required AspectType type,                 // conjunction, sextile, square, trine, opposition
+    required double orb,                      // [°] odchylenie od dokładnego aspektu
+    required bool isApplying,                 // czy aspekt się zacieśnia
+  }) = _Aspect;
+
+  factory Aspect.fromJson(Map<String, dynamic> json) => _$AspectFromJson(json);
+}
+
+@freezed
+class GeoLocation with _$GeoLocation {
+  const factory GeoLocation({
+    required double latitude,
+    required double longitude,
+    @Default(0.0) double elevationMeters,
+  }) = _GeoLocation;
+
+  factory GeoLocation.fromJson(Map<String, dynamic> json) =>
+      _$GeoLocationFromJson(json);
+}
+
+enum ZodiacSign {
+  aries, taurus, gemini, cancer, leo, virgo,
+  libra, scorpio, sagittarius, capricorn, aquarius, pisces;
+
+  /// Zwraca znak na podstawie długości ekliptycznej.
+  /// Każdy znak zajmuje 30°: Baran 0-30°, Byk 30-60°, ...
+  static ZodiacSign fromEclipticLongitude(double lon) {
+    final normalized = lon % 360;
+    return ZodiacSign.values[(normalized ~/ 30).toInt()];
+  }
+}
+
+enum AstrologicalHouse { first, second, /* ... */ twelfth }
+enum AspectType { conjunction, sextile, square, trine, opposition }
+```
+
+Klucz: Pola astronomiczne i astrologiczne są w jednej klasie, ale liczone z różnych układów współrzędnych. EphemerisService (SwissEph) zwraca eclipticLongitude natywnie; astronomy_engine_dart daje precyzyjne RA/Dec + alt/az dla obserwatora. CelestialCalculator to fasada która orkiestruje oba i składa CelestialBody.
+
+---
+
+## Dashboard MVP — komponenty
+
+Plik główny: lib/features/dashboard/presentation/dashboard_page.dart
+
+### Riverpod providers (dashboard_providers.dart)
+
+```dart
+// 1. Lokalizacja GPS — strumień (reaguje na zmiany pozycji)
+final currentLocationProvider = StreamProvider<GeoLocation>((ref) {
+  return ref.watch(locationRepositoryProvider).positionStream();
+});
+
+// 2. Snapshot dashboard — łączy lokalizację + czas + obliczenia
+final dashboardSnapshotProvider = FutureProvider<DashboardSnapshot>((ref) async {
+  final location = await ref.watch(currentLocationProvider.future);
+  final calculator = ref.watch(celestialCalculatorProvider);
+  final now = DateTime.now().toUtc();
+  return DashboardSnapshot(
+    moon: await calculator.computeMoon(now, location),
+    moonPhase: await calculator.computeMoonPhase(now),
+    seeing: await ref.watch(seeingForecastProvider.future),
+    timestamp: now,
+  );
+});
+
+// 3. Theme mode (normal / nightDark / nightRed)
+final themeModeProvider = StateNotifierProvider<ThemeModeNotifier, AppThemeMode>(
+  (ref) => ThemeModeNotifier(),
+);
+```
+
+### Widoki
+
+- MoonCard — faza księżyca (procent oświetlenia, ikona z 8 faz: New/WaxingCrescent/.../WaningCrescent), znak zodiaku Księżyca z signDegree ("☽ 14°22' ♋ Rak").
+- ZodiacCard — Słońce w znaku, aktualny "klimat dnia" (placeholder do MVP).
+- SeeingIndicator — 5-stopniowa skala (1=excellent → 5=poor) z mocka OpenMeteoSeeingMock. Kolor: zielony→czerwony, ale stłumiony pod Night Mode.
+- NightModeButton — toggle 3-stanowy: Normal / Dark / RedFilter.
+
+### Night Mode (core/theme/night_mode_overlay.dart)
+
+```dart
+class NightModeOverlay extends ConsumerWidget {
+  final Widget child;
+  const NightModeOverlay({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final mode = ref.watch(themeModeProvider);
+    if (mode != AppThemeMode.nightRed) return child;
+
+    // ColorMatrix: usuwa kanały zielony i niebieski → tylko czerwony.
+    // Zachowuje strukturę UI, ale chroni adaptację oka do ciemności (~30 min recovery).
+    return ColorFiltered(
+      colorFilter: const ColorFilter.matrix([
+        1, 0, 0, 0, 0,   // R = R
+        0, 0, 0, 0, 0,   // G = 0
+        0, 0, 0, 0, 0,   // B = 0
+        0, 0, 0, 1, 0,   // A = A
+      ]),
+      child: child,
+    );
+  }
+}
+```
+
+Owijamy całe drzewo MaterialApp.builder, więc filtr działa globalnie bez potrzeby ręcznego stylowania widgetów.
+
+Dodatkowo: AppThemeMode.nightDark używa Color(0xFF000000) (true OLED black) zamiast szarości — oszczędność baterii na OLED.
+
+---
+
+## "Czy można to zrobić lepiej?" — moje zastrzeżenia do oryginalnej propozycji
+
+| Twoja propozycja                              | Lepsza alternatywa                                | Dlaczego |
+|-----------------------------------------------|---------------------------------------------------|----------|
+| flutter_bloc                                  | Riverpod 2.x (wybrane)                            | Astro app to dużo reaktywnych strumieni czasu (pozycje co 1s) — Riverpod StreamProvider + family modifiers są tu naturalne. Bloc generuje 3-4× więcej kodu na ten sam efekt. |
+| Skyfield port                                 | astronomy_engine_dart                             | Skyfield to Python — port byłby projektem na pół roku. astronomy_engine ma już Dart port, jest licencji MIT, JPL DE441-grade. |
+| Tylko astronomy_engine                        | + Swiss Ephemeris (FFI) (wybrane)                 | astronomy_engine nie liczy domów astrologicznych (Placidus, Koch, Whole Sign) ani nie ma natywnych aspektów. SwissEph to standard astrologów od 25 lat. |
+| Isar lub SQLite                               | Drift (wybrane)                                   | Isar 3 ma niejasną przyszłość (rebuild Isar 4). Drift = type-safe SQL, reaktywne queries, świetne migracje. |
+| Brak wzmianki o i18n                          | PL+EN od MVP (wybrane)                            | Refaktor stringów do .arb po fakcie to dni roboty; od dnia 1 to ~30 min. |
+| ColorFilter z transparentną czerwoną warstwą  | ColorMatrix zerujący G+B                          | Półprzezroczysta warstwa zmniejsza kontrast (utrudnia czytanie). Macierz koloru zachowuje pełną luminancję czerwonego kanału — standard w app astronomicznych (SkySafari, Stellarium Mobile). |
+| Brak architektury warstw                      | Clean Architecture lite (presentation/domain/data)| Astro app rośnie szybko (kalendarz, mapy, planowanie sesji, eksport TIFF EXIF). Bez warstw za 6 miesięcy ból. |
+| Brak observability                            | Sentry + flutter_logs od MVP                      | Aplikacja terenowa = mało feedbacku użytkownika. Crash reports + logi diagnostyczne kluczowe. |
+
+---
+
+## Auth & Security — design pod komercyjny release
+
+Werdykt na pytanie "czy zabezpieczenia można dodać potem bez problemu": TAK, ale tylko jeśli teraz zrobimy 5 niżej wymienionych decyzji architektonicznych. Bez nich retrofit = migracja danych użytkowników + audyt = tygodnie pracy + ryzyko wycieku.
+
+### MVP: co implementujemy teraz
+
+Local profile + PIN/biometria (offline-first):
+
+1. Onboarding flow — pierwsze uruchomienie: user wpisuje nick → wybiera PIN (4-6 cyfr) → opcjonalny biometric setup (local_auth plugin). Profil zapisany w Drift jako LocalProfile (UUID id, nick, pinHash, biometricEnabled, createdAt).
+2. PIN hashing — PBKDF2-HMAC-SHA256 z 100k iteracji, sól per-profile (16 bajtów random), zapisany w flutter_secure_storage. Nie własna kryptografia — tylko crypto package.
+3. Lock screen — po cold start app wymaga unlock (PIN lub biometria). Auto-lock po X minutach w tle (default 5, konfigurowalne).
+4. Wszystkie wrażliwe dane w flutter_secure_storage — pinHash, salt, sessionToken (gdy dojdzie sync), API keys jeśli kiedyś jakieś będą. NIGDY shared_preferences ani plain Drift dla wrażliwych pól.
+5. Routing guards — go_router redirect: jeśli authState != Authenticated → /lock. Z wyjątkiem /onboarding.
+
+### Pluggable AuthProvider — fundament pod przyszłą migrację do Supabase
+
+```dart
+// core/auth/auth_provider.dart
+abstract interface class AuthProvider {
+  Stream<AuthState> authStateChanges();
+  Future<AuthState> currentState();
+  Future<void> unlockWithPin(String pin);
+  Future<void> unlockWithBiometric();
+  Future<void> lock();
+  Future<void> signOut();
+  Future<UserProfile?> currentUser();
+}
+
+// MVP impl
+class LocalAuthProvider implements AuthProvider { /* ... */ }
+
+// FUTURE impl — sygnatury identyczne, swap przez Riverpod override
+class SupabaseAuthProvider implements AuthProvider { /* ... */ }
+```
+
+Konsumenci (UI, repositories) widzą tylko AuthProvider. Migracja do Supabase = zmiana 1 linii w Riverpod providers.dart.
+
+### 5 decyzji architektonicznych "now" które ratują "later"
+
+| # | Decyzja teraz                                                                                  | Bez tego problem potem |
+|---|------------------------------------------------------------------------------------------------|------------------------|
+| 1 | AuthProvider interface (sealed/abstract) — wszyscy konsumenci uzależnieni od interfejsu, nie impl | Bez tego: każdy widget/repo z hardcoded LocalAuth wywołaniami → setki miejsc do refaktoru |
+| 2 | UUID userId w wszystkich user-facing tabelach (już w planie sync-ready)                        | Bez tego: migracja autoincrement → UUID na żywej bazie = ryzyko utraty danych |
+| 3 | flutter_secure_storage dla wszystkiego wrażliwego od dnia 1                                    | Bez tego: jeśli choć raz pinHash trafi do shared_preferences, audyt security flagujący jako leak. Migracja istniejących userów = wymuszone re-setup PIN |
+| 4 | PII filter przed Sentry/logami (pii_filter.dart) — usuwa email, lat/lon (zaokrągla do 0.1°), nick z error reportów | Bez tego: GDPR violation gdy crash report zawiera lokalizację user'a. Audyt = panika |
+| 5 | DataPurger od MVP — funkcja "Delete all my data" w settings, hard delete z Drift + secure storage wipe + Sentry user opt-out | Bez tego: GDPR Right to Erasure niezgodność. Implementacja w pożarze przed release = błędy = wycieki |
+
+### Co MOŻE czekać do komercyjnego release (bez bólu)
+
+- Email verification flow — dochodzi z Supabase Auth, LocalAuthProvider go nie ma (i nie potrzebuje)
+- Password reset — to samo
+- 2FA (TOTP) — dodawalne jako opt-in feature later
+- Session management UI ("active devices") — feature dochodzi z syncem
+- Privacy policy / Terms of Service — TEKST może czekać, ale stuby w settings + linki muszą być od MVP (Apple Store wymaga)
+- Rate limiting / brute-force protection — server-side, dochodzi z Supabase
+- OAuth (Google/Apple Sign-In) — pluggable jako kolejna AuthProvider impl
+- Audit logs (kto kiedy zalogował) — server-side z Supabase, MVP nie potrzebuje
+
+### Pubspec — security deps MVP
+
+```yaml
+flutter_secure_storage: ^9.x
+local_auth: ^2.x         # biometria
+crypto: ^3.x             # PBKDF2 dla PIN hash
+# === RESERVED ===
+# supabase_flutter: ^2.x   # Cloud auth (z synciem)
+# google_sign_in: ^6.x     # OAuth (potem)
+# sign_in_with_apple: ^6.x # Apple OAuth (wymagane dla iOS jeśli inny OAuth)
+```
+
+### Threat model MVP (offline-first, pre-cloud)
+
+| Threat                                                          | Mitigation w MVP |
+|-----------------------------------------------------------------|------------------|
+| Telefon ukradziony, atakujący chce dostęp do danych             | PIN (PBKDF2 100k iter, 6-cyfrowy = ~1M kombinacji + lockout po 5 nieudanych) + biometria opcjonalna. Drift database NOT encrypted w MVP — można dodać sqlcipher later (drift wspiera). |
+| Apka loguje crash → Sentry leakuje lokalizację                  | pii_filter.dart przed Sentry.beforeSend |
+| User chce usunąć konto/dane                                     | DataPurger w settings (hard delete + secure storage wipe) |
+| Migracja do cloud: jak nie złamać UX?                           | Lokalny userId (UUID) staje się Supabase user id po sign-up. Drift userId column już wypełniona. Zero migracji danych. |
+
+Co NIE jest w MVP threat modelu (dochodzi z syncem):
+- Network MitM (HTTPS pinning)
+- Server-side data breach
+- API rate limiting
+- DDoS
+
+---
+
+## Rekomendacje "na później" — werdykt: każdą da się dodać potem bez problemu
+
+Decyzja: nie implementujemy ich w MVP, ale teraz wbudowujemy architectural hooks tak żeby przyszła implementacja była szybka i nie wymagała refaktoru.
+
+| Feature                           | Czy odłożenie blokuje?                | Co robimy teraz (hook) | Co robimy potem (impl) |
+|-----------------------------------|---------------------------------------|------------------------|------------------------|
+| Plate Solving offline             | NIE                                   | Pusty folder features/plate_solving/ + README. pubspec.yaml: zarezerwować dependency placeholder w komentarzu. | Dodać dependency (FFI binding do astrometry.net C lib lub tetra3 port), katalog Tycho-2 ściągany on-demand. |
+| AR Sky Map                        | NIE                                   | Pusty folder features/ar_sky_map/ + README. Camera permission w AndroidManifest.xml + Info.plist już w MVP (sama prośba dopiero gdy feature użyte — to standard, nie blokuje store review). | Dodać arcore_flutter_plugin + arkit_plugin, sensor fusion, render. |
+| Eksport Stellarium/SkySafari      | NIE                                   | Pusty folder features/exporters/ + README. | Klasa per format (StellariumExporter, SkySafariExporter) + integracja z share_plus. Trywialne. |
+| Sync (Supabase)                   | NIE — pod warunkiem sync-ready schemy | Drift schema MVP-ready dla synca: UUID PK, createdAt/updatedAt/deletedAt, kolumna userId (NULLABLE). Detale niżej. | Supabase Auth + Realtime + push/pull queue + conflict resolution. Wykorzysta istniejącą schemę bez migracji. |
+
+Kluczowa obserwacja: wszystkie 4 features są izolowane od reszty (osobne moduły, nie zmieniają core/data). Sync to jedyny przypadek gdzie odłożenie byłoby problemem gdyby schema była naiwna — ale z poniższymi decyzjami nie jest.
+
+### Sync-ready Drift schema (zero kosztu w MVP)
+
+W tabelach user-facing (session_logs, equipment, natal_charts):
+
+1. UUID v4 jako PK zamiast autoIncrement(). Drift: TextColumn get id => text().clientDefault(() => Uuid().v4())();
+2. Audit columns (NOT NULL createdAt, updatedAt; NULLABLE deletedAt):
+   - DAO helper _touch() ustawia updatedAt = DateTime.now().toUtc() przy każdym updatecie.
+3. Soft delete — _softDelete() ustawia deletedAt, queries filtrują WHERE deletedAt IS NULL.
+4. Reservation column userId (TEXT NULLABLE) — w MVP zawsze NULL, w sync mode wypełniana z Supabase Auth.
+
+To kosztuje ~30 min w MVP. Bez tego za 6 miesięcy → migracja UUIDs na żywej bazie + risk utraty danych.
+
+### Pubspec future-proofing
+
+W pubspec.yaml w komentarzach zarezerwować bloki:
+
+```yaml
+# === MVP ===
+flutter_riverpod: ^2.5.0
+drift: ^2.18.0
+# ...
+
+# === RESERVED FOR FUTURE FEATURES (uncomment when implementing) ===
+# arcore_flutter_plugin: ^0.x        # AR Sky Map (Android)
+# arkit_plugin: ^1.x                 # AR Sky Map (iOS)
+# supabase_flutter: ^2.x             # Cloud sync
+# share_plus: ^9.x                   # Stellarium/SkySafari export
+```
+
+Ułatwia future-Claude/future-ciebie znaleźć decyzje bez przekopywania historii.
+
+---
+
+## Plan implementacji (krok po kroku)
+
+1. Bootstrap projektu (~45 min)
+   - flutter create cosmic_companion --org com.waroczyk --platforms=android,ios
+   - pubspec.yaml: deps MVP (flutter_riverpod, drift, drift_flutter, freezed, json_serializable, uuid, geolocator, permission_handler, intl, flutter_localizations, maplibre_gl, go_router, sentry_flutter, astronomy_engine_dart, sweph lub flutter_swiss_ephemeris) + zarezerwowane bloki w komentarzach (AR/Sync/Export — patrz wyżej).
+   - analysis_options.yaml z very_good_analysis.
+   - Future scaffolding: utworzyć puste foldery features/{plate_solving,ar_sky_map,exporters,sync}/ z README.md w każdym (treść = werdykt z tabeli wyżej + co dodać przy implementacji).
+   - Manifesty: android/app/src/main/AndroidManifest.xml + ios/Runner/Info.plist z deklaracjami camera permission (zarezerwowane pod AR Sky Map). Bez request — tylko deklaracja, żeby nie robić drugiej iteracji store review później.
+
+2. Core: theme + l10n + DI + privacy (~1.5h)
+   - app_theme.dart (OLED black + Material 3 dark scheme).
+   - night_mode_overlay.dart (ColorMatrix).
+   - l10n.yaml + pierwsze stringi w app_pl.arb / app_en.arb.
+   - providers.dart (Riverpod global providers).
+   - core/privacy/: telemetry_consent.dart, pii_filter.dart, data_purger.dart (skeleton).
+   - Sentry init z beforeSend = piiFilter.scrub i opt-in domyślnie OFF (włączane w privacy_settings).
+
+3. Core: auth (interface + LocalAuth impl) (~2.5h)
+   - auth_provider.dart (abstract interface).
+   - local_auth_provider.dart (PBKDF2 PIN hashing, biometric via local_auth, lock state).
+   - secure_storage.dart (wrapper na flutter_secure_storage).
+   - auth_state.dart (freezed sealed: Authenticated/Unauthenticated/Locked).
+   - supabase_auth_provider.dart (stub class — sygnatury z throw UnimplementedError(), żeby kompilator pilnował zgodności interfejsu).
+   - Riverpod providers: authProvider (returns LocalAuthProvider w MVP), authStateProvider (StreamProvider).
+   - Routing guards w app_router.dart: redirect na /lock gdy Locked, na /onboarding gdy Unauthenticated.
+
+4. Core/astronomy: silnik obliczeniowy (~3h)
+   - ephemeris_service.dart — SwissEph FFI wrapper (init z plikami z assets/ephemeris/, swe_calc_ut, swe_houses_ex).
+   - astronomy_engine_service.dart — adapter dla rise/set/transit + alt/az.
+   - celestial_calculator.dart — fasada: Future<CelestialBody> computeBody(CelestialBodyId, DateTime, GeoLocation).
+   - Testy jednostkowe: porównanie z znanymi efemerydami (np. NASA HORIZONS) na 2026-04-30 dla Księżyca.
+
+5. Data: model + DB (~1.5h)
+   - celestial_body.dart (freezed) + uruchom code-gen.
+   - database.dart (Drift) + tabele local_profiles, session_logs, equipment, astro_events_cache, natal_charts.
+   - Sync-ready schema: wszystkie user-facing tabele mają id TEXT (UUID), createdAt, updatedAt, deletedAt, userId (NULLABLE). DAO helpers: _setUpdatedAt(), notDeleted().
+   - location_repository.dart (geolocator + permission_handler).
+   - Permission scope: permission_handler skonfigurowany pod location + camera (camera zarezerwowane pod AR Sky Map — manifest/Info.plist od razu, prośba o permission dopiero gdy feature użyte).
+
+6. Feature: Auth UI (~2h)
+   - onboarding_page.dart (nick + PIN setup + biometric opt-in).
+   - lock_screen_page.dart (PIN keypad + biometric button).
+   - profile_page.dart (edycja nick, zmiana PIN, "Promote to cloud" disabled).
+   - privacy_settings_page.dart (telemetria opt-in, "Delete all my data" → DataPurger).
+
+7. Feature: Dashboard MVP (~3h)
+   - dashboard_providers.dart.
+   - dashboard_page.dart (skaffold + 3 karty + Night Mode button).
+   - MoonCard, ZodiacCard, SeeingIndicator, NightModeButton.
+   - Mock seeing_forecast_service.dart zwracający stub data.
+   - NightModeOverlay w app.dart na poziomie MaterialApp.builder.
+
+8. Verification — patrz sekcja niżej.
+
+---
+
+## Krytyczne pliki do utworzenia (kolejność)
+
+1.  pubspec.yaml
+2.  lib/main.dart → lib/app.dart
+3.  lib/core/theme/app_theme.dart + night_mode_overlay.dart
+4.  lib/core/privacy/pii_filter.dart + data_purger.dart + telemetry_consent.dart
+5.  lib/core/auth/auth_provider.dart + local_auth_provider.dart + secure_storage.dart + auth_state.dart
+6.  lib/core/astronomy/ephemeris_service.dart + celestial_calculator.dart
+7.  lib/data/models/celestial_body.dart
+8.  lib/data/db/database.dart (z tabelą local_profiles)
+9.  lib/data/repositories/location_repository.dart
+10. lib/features/auth/presentation/onboarding_page.dart + lock_screen_page.dart
+11. lib/core/routing/app_router.dart (z guards)
+12. lib/features/dashboard/presentation/dashboard_page.dart + widgets/
+13. lib/features/dashboard/presentation/providers/dashboard_providers.dart
+14. lib/features/settings/presentation/privacy_settings_page.dart
+
+---
+
+## Verification (jak sprawdzić że działa)
+
+### Testy automatyczne
+```bash
+flutter test                                    # unit tests
+flutter test test/core/astronomy/               # weryfikacja ephemerydy
+```
+
+Test ephemerydy musi przejść porównanie z NASA HORIZONS dla Księżyca na 2026-04-30T20:00:00Z w Gdańsku (54.35°N, 18.65°E):
+- Oczekiwana długość ekliptyczna: check via ssd.jpl.nasa.gov/horizons
+- Tolerancja: 0.01° (36 sekund łuku) — to standard dla astrologii.
+
+### Test manualny (Auth + Dashboard MVP)
+```bash
+flutter run -d android                          # lub iOS
+```
+
+Auth checklist:
+- [ ] Pierwsze uruchomienie → onboarding (nick + PIN setup + biometric opt-in).
+- [ ] PIN wymaga 4-6 cyfr, nie akceptuje "1234"/"0000" (lista weak PINs).
+- [ ] Po setupie → dashboard otwarty.
+- [ ] Cold start → lock screen z PIN keypad.
+- [ ] 5x błędny PIN → lockout 30s.
+- [ ] Biometric unlock działa (jeśli włączone).
+- [ ] App tłumaczona w PL i EN (zmiana w settings).
+
+Dashboard checklist:
+- [ ] Aplikacja prosi o permission lokalizacji przy pierwszym wejściu na dashboard.
+- [ ] Po nadaniu permission, dashboard pokazuje fazę Księżyca jako procent + ikonę.
+- [ ] Znak zodiaku Księżyca jest poprawny (krzyż-check ze moonsign.com).
+- [ ] Seeing indicator pokazuje wartość (mock).
+- [ ] Toggle Night Mode → cały ekran zmienia się na czerwony, czytelność zachowana.
+- [ ] Toggle off → wraca do trybu ciemnego (OLED black).
+- [ ] Restart aplikacji zachowuje wybrany tryb (preferencje w Drift).
+
+Privacy/GDPR checklist:
+- [ ] Sentry telemetria domyślnie OFF, włącza się w settings.
+- [ ] Crash test (throw Exception('test')) → sprawdź że event w Sentry NIE zawiera lokalizacji ani nicku.
+- [ ] "Delete all my data" w settings → po potwierdzeniu DB pusta + secure storage wyczyszczone + app wraca do onboarding.
+- [ ] Privacy policy / Terms linki w About page (mogą prowadzić do stub'a w MVP).
+
+### Test offline
+- [ ] Włącz tryb samolotowy → dashboard nadal działa (lokalizacja ostatnia + obliczenia z plików ephemeris z assets).
+
+### Lint / formatowanie
+```bash
+flutter analyze
+dart format --set-exit-if-changed lib test
+```
+
+---
+
+## Otwarte kwestie (do rozstrzygnięcia w trakcie implementacji)
+
+1. Pakiet SwissEph dla Dart: sweph (dart:ffi) vs flutter_swiss_ephemeris — sprawdzić który jest aktualniejszy w 04.2026 (oba istnieją, ale ich utrzymanie bywa nierównomierne). W razie obu mocno opóźnionych — własny FFI binding (~1 dzień roboty).
+2. Light pollution data source: VIIRS (NASA, darmowe) vs Bortle z lightpollutionmap.info (CC-BY) — zdecydujemy przy implementacji feature map.
+3. Pierwszy commit: czy chcesz żebym po zatwierdzeniu planu zrobił bootstrap (flutter create + struktura folderów + pubspec.yaml) jako jeden commit, czy podzielić na mniejsze?
