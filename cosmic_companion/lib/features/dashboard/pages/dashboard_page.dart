@@ -12,6 +12,7 @@ import 'package:cosmic_companion/features/dso/domain/dso_visibility.dart';
 import 'package:cosmic_companion/features/dso/pages/catalog_page.dart';
 import 'package:cosmic_companion/features/dso/providers/dso_providers.dart';
 import 'package:cosmic_companion/features/map/pages/light_pollution_map_page.dart';
+import 'package:cosmic_companion/features/weather/providers/weather_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -116,7 +117,8 @@ class _DashboardContent extends ConsumerWidget {
           ..invalidate(moonPhaseProvider)
           ..invalidate(moonBodyProvider)
           ..invalidate(visibleDsoTodayProvider)
-          ..invalidate(astroTwilightProvider);
+          ..invalidate(astroTwilightProvider)
+          ..invalidate(weatherForecastProvider);
         for (final id in _planetIds) {
           ref.invalidate(planetBodyProvider(id));
         }
@@ -177,7 +179,7 @@ class _HeroHeaderState extends ConsumerState<_HeroHeader> {
     final topPad = MediaQuery.of(context).padding.top;
     final locationAsync = ref.watch(currentLocationProvider);
     final phaseAsync = ref.watch(moonPhaseProvider);
-    final seeing = ref.watch(mockSeeingProvider);
+    final seeing = ref.watch(weatherSeeingProvider);
 
     final timeStr = DateFormat('HH:mm').format(_now);
     final dateStr = DateFormat('EEE, d MMMM yyyy', 'pl').format(_now);
@@ -309,7 +311,8 @@ class _SkyConditionsCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final seeing = ref.watch(mockSeeingProvider);
+    final seeing = ref.watch(weatherSeeingProvider);
+    final cloud = ref.watch(cloudCoverProvider);
     final phaseAsync = ref.watch(moonPhaseProvider);
     final twilightAsync = ref.watch(astroTwilightProvider);
 
@@ -408,12 +411,28 @@ class _SkyConditionsCard extends ConsumerWidget {
           const SizedBox(height: 8),
           Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: _MetricCell(
                   label: 'ZACHMURZENIE',
-                  value: '5%',
-                  valueColor: AppTheme.scoreGreen,
-                  sub: 'Praktycznie bezchmurnie',
+                  value: cloud != null ? '$cloud%' : '–',
+                  valueColor: cloud == null
+                      ? AppTheme.textMuted
+                      : cloud < 30
+                          ? AppTheme.scoreGreen
+                          : cloud < 70
+                              ? AppTheme.scoreOrange
+                              : AppTheme.scoreRed,
+                  sub: cloud == null
+                      ? 'Ładowanie...'
+                      : cloud < 10
+                          ? 'Bezchmurnie'
+                          : cloud < 30
+                              ? 'Małe zachmurzenie'
+                              : cloud < 60
+                                  ? 'Umiarkowane'
+                                  : cloud < 85
+                                      ? 'Duże zachmurzenie'
+                                      : 'Niebo pokryte',
                 ),
               ),
               const SizedBox(width: 8),

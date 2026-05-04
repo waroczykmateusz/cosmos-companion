@@ -5,6 +5,7 @@ import 'package:cosmic_companion/features/calendar/providers/calendar_providers.
 import 'package:cosmic_companion/features/dso/domain/dso_object.dart';
 import 'package:cosmic_companion/features/dso/domain/dso_visibility.dart';
 import 'package:cosmic_companion/features/dso/providers/dso_providers.dart';
+import 'package:cosmic_companion/features/weather/providers/weather_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -418,14 +419,15 @@ class _LegendItem extends StatelessWidget {
 
 // ── 7-day forecast strip ──────────────────────────────────────────────────────
 
-class _ForecastStrip extends StatelessWidget {
+class _ForecastStrip extends ConsumerWidget {
   const _ForecastStrip({required this.badgeDays, required this.month});
 
   final Set<int> badgeDays;
   final DateTime month;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final weekCloud = ref.watch(weekCloudCoverProvider);
     final now = DateTime.now();
     const dowLabels = ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb', 'Nd'];
 
@@ -458,9 +460,12 @@ class _ForecastStrip extends StatelessWidget {
                   badgeDays.contains(day.day);
 
               final illum = DsoVisibility.approxMoonIllumination(day.toUtc());
+              final cloud = i < weekCloud.length ? weekCloud[i] : 0;
               final score = goodDso
-                  ? (10.0 - illum / 100.0 * 3.0).clamp(4.0, 10.0)
-                  : (4.0 - illum / 100.0 * 3.0).clamp(0.0, 4.0);
+                  ? (10.0 - illum / 100.0 * 3.0 - cloud / 100.0 * 4.0)
+                      .clamp(0.0, 10.0)
+                  : (4.0 - illum / 100.0 * 2.0 - cloud / 100.0 * 3.0)
+                      .clamp(0.0, 4.0);
               final scoreColor = score >= 7
                   ? AppTheme.scoreGreen
                   : score >= 5
