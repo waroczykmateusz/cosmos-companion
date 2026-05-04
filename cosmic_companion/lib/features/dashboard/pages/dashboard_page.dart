@@ -12,8 +12,6 @@ import 'package:cosmic_companion/features/dso/domain/dso_visibility.dart';
 import 'package:cosmic_companion/features/dso/pages/catalog_page.dart';
 import 'package:cosmic_companion/features/dso/providers/dso_providers.dart';
 import 'package:cosmic_companion/features/map/pages/light_pollution_map_page.dart';
-import 'package:cosmic_companion/features/settings/pages/settings_page.dart';
-import 'package:cosmic_companion/features/solar_system/pages/solar_system_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -33,6 +31,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   static final _tabs = [
     const _DashboardContent(),
     const CalendarPage(),
+    const LightPollutionMapPage(),
     const CatalogPage(),
     const ProfilePage(),
   ];
@@ -83,6 +82,10 @@ class _BottomNav extends StatelessWidget {
           BottomNavigationBarItem(
             icon: Icon(Icons.calendar_month_outlined),
             label: 'Kalendarz',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.map_outlined),
+            label: 'Mapa',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.scatter_plot_outlined),
@@ -225,37 +228,6 @@ class _HeroHeaderState extends ConsumerState<_HeroHeader> {
                 ),
                 const SizedBox(height: 10),
                 _NightBadge(seeing: seeing),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    _SmallIconButton(
-                      icon: Icons.hub_outlined,
-                      tooltip: 'Układ Słoneczny',
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                            builder: (_) => const SolarSystemPage()),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    _SmallIconButton(
-                      icon: Icons.map_outlined,
-                      tooltip: 'Mapa zanieczyszczenia',
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                            builder: (_) => const LightPollutionMapPage()),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    _SmallIconButton(
-                      icon: Icons.settings_outlined,
-                      tooltip: 'Ustawienia',
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                            builder: (_) => const SettingsPage()),
-                      ),
-                    ),
-                  ],
-                ),
               ],
             ),
           ),
@@ -325,35 +297,6 @@ class _NightBadge extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _SmallIconButton extends StatelessWidget {
-  const _SmallIconButton({
-    required this.icon,
-    required this.tooltip,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String tooltip;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 30,
-        height: 30,
-        decoration: BoxDecoration(
-          color: AppTheme.bgCard,
-          border: Border.all(color: AppTheme.border),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Icon(icon, size: 14, color: AppTheme.textAccent),
       ),
     );
   }
