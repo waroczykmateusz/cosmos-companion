@@ -457,7 +457,10 @@ class _ForecastStrip extends StatelessWidget {
               final goodDso = day.month == month.month &&
                   badgeDays.contains(day.day);
 
-              final score = goodDso ? 7.0 + (day.day % 3) * 0.5 : 3.0;
+              final illum = DsoVisibility.approxMoonIllumination(day.toUtc());
+              final score = goodDso
+                  ? (10.0 - illum / 100.0 * 3.0).clamp(4.0, 10.0)
+                  : (4.0 - illum / 100.0 * 3.0).clamp(0.0, 4.0);
               final scoreColor = score >= 7
                   ? AppTheme.scoreGreen
                   : score >= 5

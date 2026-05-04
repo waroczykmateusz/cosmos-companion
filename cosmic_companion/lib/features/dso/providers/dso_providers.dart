@@ -97,27 +97,30 @@ final dsoForDateProvider = FutureProvider.autoDispose
   return results;
 });
 
-/// For each day in the given month: whether any DSO scores ≥ 7 (altitude-only,
-/// no Moon factor — keeps this provider free of per-day ephemeris calls).
+/// For each day in the given month: whether any DSO scores ≥ 7.
+/// Uses formula-based Moon approximation (no FFI) for moon illumination
+/// and position — fast enough to run for all 31 days synchronously.
 final dsoBadgeMonthProvider =
     FutureProvider.autoDispose.family<Set<int>, DateTime>((ref, month) async {
   final location = await ref.watch(currentLocationProvider.future);
 
-  final daysInMonth =
-      DateTime(month.year, month.month + 1, 0).day;
+  final daysInMonth = DateTime(month.year, month.month + 1, 0).day;
 
   final goodDays = <int>{};
   for (var day = 1; day <= daysInMonth; day++) {
     final midnight = DateTime.utc(month.year, month.month, day);
+    final illumination = DsoVisibility.approxMoonIllumination(midnight);
+    final moonRa = DsoVisibility.approxMoonRaHours(midnight);
+    final moonDec = DsoVisibility.approxMoonDecDeg(midnight);
     final anyGood = DsoCatalog.all.any((dso) {
       final r = DsoVisibility.compute(
         dso,
         midnight,
         location.latitude,
         location.longitude,
-        0, // ignore Moon for calendar badge
-        0,
-        0,
+        illumination,
+        moonRa,
+        moonDec,
       );
       return r.score >= 7;
     });
