@@ -520,26 +520,35 @@ class _DarkWindowCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final twilightAsync = ref.watch(astroTwilightProvider);
+    final dawnAsync = ref.watch(astroDawnProvider);
     final moonAsync = ref.watch(moonBodyProvider);
 
     final twilight = twilightAsync.valueOrNull;
+    final dawn = dawnAsync.valueOrNull;
     final moonSet = moonAsync.valueOrNull?.setTime;
 
     if (twilight == null) return const SizedBox.shrink();
 
     final start = twilight.toLocal();
-    final end = moonSet?.toLocal();
 
     String window;
     String sub;
-    if (end != null && end.isAfter(twilight)) {
-      final dur = end.difference(twilight);
+    // Moon sets during the dark window → free window is twilight → moonSet
+    if (moonSet != null && moonSet.isAfter(twilight) &&
+        (dawn == null || moonSet.isBefore(dawn))) {
+      final moonSetLocal = moonSet.toLocal();
+      final dawnLocal = dawn?.toLocal();
+      final endFmt = dawnLocal != null ? _fmt.format(dawnLocal) : '–';
+      window = '${_fmt.format(moonSetLocal)} – $endFmt';
+      final dur = (dawn ?? moonSet).difference(moonSet);
       final h = dur.inHours;
       final m = dur.inMinutes % 60;
-      window = '${_fmt.format(start)} – ${_fmt.format(end)}';
-      sub = '${h}h ${m}min bez Księżyca i zmierzchu · najlepszy czas na DSO';
+      sub = 'Księżyc zachodzi o ${_fmt.format(moonSetLocal)} · ${h}h ${m}min bez Księżyca';
     } else {
-      window = 'Od ${_fmt.format(start)}';
+      // No moon interference — full window from twilight to dawn
+      final dawnLocal = dawn?.toLocal();
+      final endFmt = dawnLocal != null ? ' – ${_fmt.format(dawnLocal)}' : '';
+      window = '${_fmt.format(start)}$endFmt';
       sub = 'Pełna ciemność po zmierzchu astronomicznym';
     }
 

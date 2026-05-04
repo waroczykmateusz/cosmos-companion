@@ -83,11 +83,16 @@ final mockSeeingProvider = Provider<SeeingRating>((ref) {
   return SeeingRating.values[doy % SeeingRating.values.length];
 });
 
-/// Approximate astronomical twilight end = sun set + 90 min.
-/// Good enough for planning at mid-latitudes; replace with swe_rise_trans
-/// twilight flag when a proper computation is added.
+/// Approximate astronomical twilight start = sun set + 90 min.
 final astroTwilightProvider = FutureProvider.autoDispose<DateTime?>((ref) async {
   final sun = await ref.watch(planetBodyProvider(CelestialBodyId.sun).future);
   if (sun.setTime == null) return null;
   return sun.setTime!.add(const Duration(minutes: 90));
+});
+
+/// Approximate astronomical dawn = sun rise - 90 min.
+final astroDawnProvider = FutureProvider.autoDispose<DateTime?>((ref) async {
+  final sun = await ref.watch(planetBodyProvider(CelestialBodyId.sun).future);
+  if (sun.riseTime == null) return null;
+  return sun.riseTime!.subtract(const Duration(minutes: 90));
 });
