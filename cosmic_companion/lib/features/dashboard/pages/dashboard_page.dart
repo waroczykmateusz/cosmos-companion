@@ -915,12 +915,68 @@ class _PlanetChip extends ConsumerWidget {
 
 // ── DSO tonight section ───────────────────────────────────────────────────────
 
+// ── Cloud cover banner ────────────────────────────────────────────────────────
+
+class _CloudBanner extends StatelessWidget {
+  const _CloudBanner({required this.cloudPct});
+
+  final int cloudPct;
+
+  @override
+  Widget build(BuildContext context) {
+    final overcast = cloudPct >= 80;
+    final color = overcast ? AppTheme.scoreRed : AppTheme.scoreOrange;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        border: Border.all(color: color.withValues(alpha: 0.30)),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          Text(overcast ? '☁' : '⛅', style: const TextStyle(fontSize: 14)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  overcast
+                      ? 'Niebo zachmurzone · obserwacja niemożliwa'
+                      : 'Częściowe zachmurzenie · warunki ograniczone',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
+                ),
+                Text(
+                  'Zachmurzenie $cloudPct% · wyniki astronomiczne poniżej',
+                  style: TextStyle(
+                    fontSize: 9,
+                    color: color.withValues(alpha: 0.70),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── DSO tonight section ───────────────────────────────────────────────────────
+
 class _DsoSection extends ConsumerWidget {
   const _DsoSection();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final dsoAsync = ref.watch(visibleDsoTodayProvider);
+    final cloud = ref.watch(cloudCoverProvider);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -950,6 +1006,7 @@ class _DsoSection extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 10),
+          if (cloud != null && cloud >= 30) _CloudBanner(cloudPct: cloud),
           dsoAsync.when(
             loading: () => const Center(
               child: Padding(

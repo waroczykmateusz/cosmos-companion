@@ -2,6 +2,7 @@ import 'package:cosmic_companion/core/theme/app_theme.dart';
 import 'package:cosmic_companion/features/dso/domain/dso_object.dart';
 import 'package:cosmic_companion/features/dso/domain/dso_visibility.dart';
 import 'package:cosmic_companion/features/dso/providers/dso_providers.dart';
+import 'package:cosmic_companion/features/weather/providers/weather_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -27,6 +28,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
   Widget build(BuildContext context) {
     final topPad = MediaQuery.of(context).padding.top;
     final allAsync = ref.watch(allDsoWithVisibilityProvider);
+    final cloud = ref.watch(cloudCoverProvider);
 
     return Scaffold(
       backgroundColor: AppTheme.bgMain,
@@ -148,6 +150,8 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
               ],
             ),
           ),
+          if (cloud != null && cloud >= 30)
+            _CatalogCloudBanner(cloudPct: cloud),
           // ── List ─────────────────────────────────────────────────────────
           Expanded(
             child: allAsync.when(
@@ -583,4 +587,57 @@ class _CatalogDetailSheet extends StatelessWidget {
           ],
         ),
       );
+}
+
+// ── Cloud cover banner ────────────────────────────────────────────────────────
+
+class _CatalogCloudBanner extends StatelessWidget {
+  const _CatalogCloudBanner({required this.cloudPct});
+
+  final int cloudPct;
+
+  @override
+  Widget build(BuildContext context) {
+    final overcast = cloudPct >= 80;
+    final color = overcast ? AppTheme.scoreRed : AppTheme.scoreOrange;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(14, 0, 14, 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        border: Border.all(color: color.withValues(alpha: 0.30)),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          Text(overcast ? '☁' : '⛅', style: const TextStyle(fontSize: 14)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  overcast
+                      ? 'Niebo zachmurzone · obserwacja niemożliwa'
+                      : 'Częściowe zachmurzenie · warunki ograniczone',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
+                ),
+                Text(
+                  'Zachmurzenie $cloudPct% · wyniki astronomiczne poniżej',
+                  style: TextStyle(
+                    fontSize: 9,
+                    color: color.withValues(alpha: 0.70),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
