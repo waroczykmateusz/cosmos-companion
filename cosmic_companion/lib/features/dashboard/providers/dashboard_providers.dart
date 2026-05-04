@@ -82,3 +82,12 @@ final mockSeeingProvider = Provider<SeeingRating>((ref) {
       .inDays;
   return SeeingRating.values[doy % SeeingRating.values.length];
 });
+
+/// Approximate astronomical twilight end = sun set + 90 min.
+/// Good enough for planning at mid-latitudes; replace with swe_rise_trans
+/// twilight flag when a proper computation is added.
+final astroTwilightProvider = FutureProvider.autoDispose<DateTime?>((ref) async {
+  final sun = await ref.watch(planetBodyProvider(CelestialBodyId.sun).future);
+  if (sun.setTime == null) return null;
+  return sun.setTime!.add(const Duration(minutes: 90));
+});

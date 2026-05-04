@@ -32,6 +32,35 @@ final visibleDsoTodayProvider =
   return results;
 });
 
+/// All DSO from the catalog with visibility computed (including below-horizon).
+/// Used by the catalog page to show every object with score / altitude.
+final allDsoWithVisibilityProvider =
+    FutureProvider.autoDispose<List<DsoVisibilityResult>>((ref) async {
+  final location = await ref.watch(currentLocationProvider.future);
+  final moonPhase = await ref.watch(moonPhaseProvider.future);
+  final moonBody = await ref.watch(moonBodyProvider.future);
+
+  final now = DateTime.now().toUtc();
+  final midnight = DateTime.utc(now.year, now.month, now.day);
+
+  final results = DsoCatalog.all
+      .map(
+        (dso) => DsoVisibility.compute(
+          dso,
+          midnight,
+          location.latitude,
+          location.longitude,
+          moonPhase.illuminationPercent,
+          moonBody.rightAscension,
+          moonBody.declination,
+        ),
+      )
+      .toList()
+    ..sort((a, b) => b.score.compareTo(a.score));
+
+  return results;
+});
+
 /// For each day in the given month: whether any DSO scores ≥ 7 (altitude-only,
 /// no Moon factor — keeps this provider free of per-day ephemeris calls).
 final dsoBadgeMonthProvider =
