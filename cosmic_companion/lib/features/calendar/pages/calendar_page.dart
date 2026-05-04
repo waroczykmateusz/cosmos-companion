@@ -1,8 +1,9 @@
 import 'package:cosmic_companion/core/theme/app_theme.dart';
-import 'package:cosmic_companion/data/models/celestial_body.dart';
 import 'package:cosmic_companion/data/models/moon_phase.dart';
 import 'package:cosmic_companion/features/calendar/domain/astro_event.dart';
 import 'package:cosmic_companion/features/calendar/providers/calendar_providers.dart';
+import 'package:cosmic_companion/features/dso/domain/dso_object.dart';
+import 'package:cosmic_companion/features/dso/domain/dso_visibility.dart';
 import 'package:cosmic_companion/features/dso/providers/dso_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -34,27 +35,28 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
 
     final badgeDays = badgeDaysAsync.valueOrNull ?? const <int>{};
 
-    // Collect event days for the current month (moon phase / ingress dots)
-    final eventDays = <int>{};
-    if (eventsAsync.valueOrNull != null) {
-      for (final e in eventsAsync.value!) {
-        final local = e.utc.toLocal();
-        if (local.year == month.year && local.month == month.month) {
-          eventDays.add(local.day);
-        }
+    // Moon phase emoji per day (only moonPhase events, not ingress)
+    final moonPhaseDays = <int, String>{};
+    for (final e in eventsAsync.valueOrNull ?? <AstroEvent>[]) {
+      final local = e.utc.toLocal();
+      if (local.year == month.year &&
+          local.month == month.month &&
+          e.type == AstroEventType.moonPhase &&
+          e.moonPhase != null) {
+        moonPhaseDays[local.day] = _moonEmoji(e.moonPhase!);
       }
     }
 
-    // Events for selected day
-    final selectedEvents = eventsAsync.valueOrNull
-            ?.where((e) {
-              final local = e.utc.toLocal();
-              return local.year == _selected.year &&
-                  local.month == _selected.month &&
-                  local.day == _selected.day;
-            })
-            .toList() ??
-        [];
+    // Moon phase events for selected day (no zodiac ingress)
+    final selectedMoonEvents = (eventsAsync.valueOrNull ?? <AstroEvent>[])
+        .where((e) {
+          final local = e.utc.toLocal();
+          return local.year == _selected.year &&
+              local.month == _selected.month &&
+              local.day == _selected.day &&
+              e.type == AstroEventType.moonPhase;
+        })
+        .toList();
 
     final monthLabel =
         DateFormat('MMMM yyyy', 'pl').format(month).capitalize();
@@ -109,7 +111,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
               month: month,
               selected: _selected,
               badgeDays: badgeDays,
-              eventDays: eventDays,
+              moonPhaseDays: moonPhaseDays,
               onSelect: (d) => setState(() => _selected = d),
             ),
           ),
@@ -122,21 +124,32 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
             child: _ForecastStrip(badgeDays: badgeDays, month: month),
           ),
 
-          // ── Selected day events ──────────────────────────────────────────
+          // ── Selected day ─────────────────────────────────────────────────
           SliverToBoxAdapter(
             child: _SelectedDaySection(
               day: _selected,
-              events: selectedEvents,
+              moonEvents: selectedMoonEvents,
               hasDsoBadge: badgeDays.contains(_selected.day) &&
                   _selected.month == month.month,
             ),
           ),
 
-          const SliverToBoxAdapter(child: SizedBox(height: 24)),
+          const SliverToBoxAdapter(child: SizedBox(height: 32)),
         ],
       ),
     );
   }
+
+  String _moonEmoji(MoonPhaseName phase) => switch (phase) {
+        MoonPhaseName.newMoon => '🌑',
+        MoonPhaseName.waxingCrescent => '🌒',
+        MoonPhaseName.firstQuarter => '🌓',
+        MoonPhaseName.waxingGibbous => '🌔',
+        MoonPhaseName.fullMoon => '🌕',
+        MoonPhaseName.waningGibbous => '🌖',
+        MoonPhaseName.lastQuarter => '🌗',
+        MoonPhaseName.waningCrescent => '🌘',
+      };
 }
 
 // ── Day-of-week header ────────────────────────────────────────────────────────
@@ -178,20 +191,19 @@ class _CalendarGrid extends StatelessWidget {
     required this.month,
     required this.selected,
     required this.badgeDays,
-    required this.eventDays,
+    required this.moonPhaseDays,
     required this.onSelect,
   });
 
   final DateTime month;
   final DateTime selected;
   final Set<int> badgeDays;
-  final Set<int> eventDays;
+  final Map<int, String> moonPhaseDays;
   final ValueChanged<DateTime> onSelect;
 
   @override
   Widget build(BuildContext context) {
     final firstDay = DateTime(month.year, month.month);
-    // weekday: Mon=1..Sun=7 → offset from Monday
     final startOffset = (firstDay.weekday - 1) % 7;
     final daysInMonth = DateTime(month.year, month.month + 1, 0).day;
     final daysInPrevMonth = DateTime(month.year, month.month, 0).day;
@@ -241,7 +253,8 @@ class _CalendarGrid extends StatelessWidget {
               cellDate.day == selected.day;
 
           final isGoodDso = isCurrentMonth && badgeDays.contains(day);
-          final hasEvent = isCurrentMonth && eventDays.contains(day);
+          final moonEmoji =
+              isCurrentMonth ? moonPhaseDays[day] : null;
 
           return _DayCell(
             day: day,
@@ -249,7 +262,7 @@ class _CalendarGrid extends StatelessWidget {
             isToday: isToday,
             isSelected: isSelected,
             isGoodDso: isGoodDso,
-            hasEvent: hasEvent,
+            moonEmoji: moonEmoji,
             onTap: isCurrentMonth ? () => onSelect(cellDate) : null,
           );
         },
@@ -265,7 +278,7 @@ class _DayCell extends StatelessWidget {
     required this.isToday,
     required this.isSelected,
     required this.isGoodDso,
-    required this.hasEvent,
+    required this.moonEmoji,
     required this.onTap,
   });
 
@@ -274,7 +287,7 @@ class _DayCell extends StatelessWidget {
   final bool isToday;
   final bool isSelected;
   final bool isGoodDso;
-  final bool hasEvent;
+  final String? moonEmoji;
   final VoidCallback? onTap;
 
   @override
@@ -308,35 +321,24 @@ class _DayCell extends StatelessWidget {
           border: border,
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Stack(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Center(
-              child: Text(
-                '$day',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: textColor,
-                  fontWeight:
-                      (isToday || isSelected) ? FontWeight.w700 : null,
-                ),
+            Text(
+              '$day',
+              style: TextStyle(
+                fontSize: 10,
+                color: textColor,
+                fontWeight:
+                    (isToday || isSelected) ? FontWeight.w700 : null,
               ),
             ),
-            if (hasEvent)
-              Positioned(
-                bottom: 2,
-                left: 0,
-                right: 0,
-                child: Center(
-                  child: Container(
-                    width: 4,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? Colors.white70
-                          : AppTheme.scoreGreen,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
+            if (moonEmoji != null)
+              Text(
+                moonEmoji!,
+                style: TextStyle(
+                  fontSize: isSelected ? 8 : 7,
+                  height: 1.1,
                 ),
               ),
           ],
@@ -363,9 +365,9 @@ class _Legend extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           const _LegendItem(
-            color: AppTheme.scoreGreen,
-            label: 'Wydarzenie',
-            circle: true,
+            color: AppTheme.accentBlue,
+            label: 'Faza Księżyca',
+            isEmoji: true,
           ),
           const SizedBox(width: 12),
           _LegendItem(
@@ -382,27 +384,28 @@ class _LegendItem extends StatelessWidget {
   const _LegendItem({
     required this.color,
     required this.label,
-    this.circle = false,
+    this.isEmoji = false,
   });
 
   final Color color;
   final String label;
-  final bool circle;
+  final bool isEmoji;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Container(
-          width: 6,
-          height: 6,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: circle
-                ? BorderRadius.circular(3)
-                : BorderRadius.circular(2),
-          ),
-        ),
+        if (isEmoji)
+          const Text('🌓', style: TextStyle(fontSize: 9))
+        else
+          Container(
+                width: 6,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
         const SizedBox(width: 4),
         Text(
           label,
@@ -454,7 +457,6 @@ class _ForecastStrip extends StatelessWidget {
               final goodDso = day.month == month.month &&
                   badgeDays.contains(day.day);
 
-              // Rough score from DSO badge + weekday variation (placeholder)
               final score = goodDso ? 7.0 + (day.day % 3) * 0.5 : 3.0;
               final scoreColor = score >= 7
                   ? AppTheme.scoreGreen
@@ -487,7 +489,7 @@ class _ForecastStrip extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      _moonEmoji(day),
+                      _approxMoonEmoji(day),
                       style: const TextStyle(fontSize: 14),
                     ),
                     const SizedBox(height: 4),
@@ -510,10 +512,8 @@ class _ForecastStrip extends StatelessWidget {
     );
   }
 
-  String _moonEmoji(DateTime day) {
-    // Approximate moon phase by day-of-month cycle (29.5-day period)
-    // Reference: new moon approx every ~29.5 days from a known epoch
-    final epoch = DateTime(2024, 1, 11); // known new moon
+  String _approxMoonEmoji(DateTime day) {
+    final epoch = DateTime(2024, 1, 11);
     final diff = day.difference(epoch).inDays;
     final phase = (diff % 29.5).abs();
     if (phase < 1.5) return '🌑';
@@ -529,56 +529,51 @@ class _ForecastStrip extends StatelessWidget {
 
 // ── Selected day section ──────────────────────────────────────────────────────
 
-class _SelectedDaySection extends StatelessWidget {
+class _SelectedDaySection extends ConsumerWidget {
   const _SelectedDaySection({
     required this.day,
-    required this.events,
+    required this.moonEvents,
     required this.hasDsoBadge,
   });
 
   final DateTime day;
-  final List<AstroEvent> events;
+  final List<AstroEvent> moonEvents;
   final bool hasDsoBadge;
 
+  static final _fmt = DateFormat('HH:mm');
+  static final _dayFmt = DateFormat('EEE · d MMMM', 'pl');
+
   @override
-  Widget build(BuildContext context) {
-    final label = DateFormat('EEE · d MMMM', 'pl').format(day).capitalize();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final dsoAsync = ref.watch(dsoForDateProvider(day));
+    final label = _dayFmt.format(day).capitalize();
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'WYBRANY DZIEŃ',
-            style: TextStyle(
-              fontSize: 9,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.textMuted,
-              letterSpacing: 1,
-            ),
-          ),
-          const SizedBox(height: 8),
+          // Day label + DSO badge
           Row(
             children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.textMain,
+              Expanded(
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.textMain,
+                  ),
                 ),
               ),
-              if (hasDsoBadge) ...[
-                const SizedBox(width: 8),
+              if (hasDsoBadge)
                 Container(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
                     color: AppTheme.scoreGreen.withValues(alpha: 0.15),
                     border: Border.all(
-                      color: AppTheme.scoreGreen.withValues(alpha: 0.3),
-                    ),
+                        color: AppTheme.scoreGreen.withValues(alpha: 0.3)),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Text(
@@ -590,46 +585,102 @@ class _SelectedDaySection extends StatelessWidget {
                     ),
                   ),
                 ),
-              ],
             ],
           ),
           const SizedBox(height: 10),
-          if (events.isEmpty)
-            const Text(
-              'Brak wydarzeń astronomicznych w tym dniu.',
-              style: TextStyle(fontSize: 11, color: AppTheme.textMuted),
-            )
-          else
-            ...events.map((e) => _EventCard(event: e)),
+
+          // Moon phase events
+          if (moonEvents.isNotEmpty) ...[
+            ...moonEvents.map((e) => _MoonEventCard(event: e)),
+            const SizedBox(height: 6),
+          ],
+
+          // DSO best events
+          dsoAsync.when(
+            loading: () => const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(
+                child: CircularProgressIndicator(
+                  color: AppTheme.scoreGreen,
+                  strokeWidth: 2,
+                ),
+              ),
+            ),
+            error: (e, _) => Text(
+              'Błąd: $e',
+              style: const TextStyle(color: AppTheme.scoreRed, fontSize: 11),
+            ),
+            data: (results) {
+              if (results.isEmpty) {
+                return Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppTheme.bgCard,
+                    border: Border.all(color: AppTheme.border),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Text(
+                    'Żaden obiekt nie jest tego dnia dobrze widoczny.',
+                    style: TextStyle(
+                        fontSize: 11, color: AppTheme.textMuted),
+                  ),
+                );
+              }
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'NAJLEPSZE OBIEKTY DSO',
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textMuted,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  ...results.take(5).map(
+                        (r) => _DsoEventCard(result: r, fmt: _fmt),
+                      ),
+                ],
+              );
+            },
+          ),
         ],
       ),
     );
   }
 }
 
-class _EventCard extends StatelessWidget {
-  const _EventCard({required this.event});
+// ── Moon phase event card ─────────────────────────────────────────────────────
+
+class _MoonEventCard extends StatelessWidget {
+  const _MoonEventCard({required this.event});
 
   final AstroEvent event;
 
   @override
   Widget build(BuildContext context) {
-    final timeLabel = DateFormat('HH:mm').format(event.utc.toLocal());
-    final (icon, title, sub, borderColor) = _info();
+    final phase = event.moonPhase!;
+    final timeStr = DateFormat('HH:mm').format(event.utc.toLocal());
 
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
       decoration: BoxDecoration(
         color: AppTheme.bgCard,
-        border: Border.all(color: borderColor),
+        border: Border.all(
+            color: AppTheme.scoreOrange.withValues(alpha: 0.25)),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         children: [
           SizedBox(
             width: 28,
-            child: Text(icon, style: const TextStyle(fontSize: 16)),
+            child: Text(
+              _moonEmoji(phase),
+              style: const TextStyle(fontSize: 16),
+            ),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -637,26 +688,22 @@ class _EventCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
+                  _moonName(phase),
                   style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: AppTheme.textMain,
                   ),
                 ),
-                if (sub != null)
-                  Text(
-                    sub,
-                    style: const TextStyle(
-                      fontSize: 9,
-                      color: AppTheme.textAccent,
-                    ),
-                  ),
+                const Text(
+                  'Faza Księżyca',
+                  style: TextStyle(fontSize: 9, color: AppTheme.textAccent),
+                ),
               ],
             ),
           ),
           Text(
-            timeLabel,
+            timeStr,
             style: const TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
@@ -667,33 +714,6 @@ class _EventCard extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  (String icon, String title, String? sub, Color borderColor) _info() {
-    switch (event.type) {
-      case AstroEventType.moonPhase:
-        final phase = event.moonPhase!;
-        return (
-          _moonEmoji(phase),
-          _moonName(phase),
-          'Faza Księżyca',
-          AppTheme.scoreOrange.withValues(alpha: 0.2),
-        );
-      case AstroEventType.moonIngress:
-        return (
-          '☽',
-          'Księżyc → ${_signName(event.ingressSign!)}',
-          'Ingres Księżyca',
-          AppTheme.textAccent.withValues(alpha: 0.2),
-        );
-      case AstroEventType.planetaryIngress:
-        return (
-          _bodyEmoji(event.body),
-          '${_bodyName(event.body)} → ${_signName(event.ingressSign!)}',
-          'Ingres planety',
-          AppTheme.accentBlue.withValues(alpha: 0.2),
-        );
-    }
   }
 
   String _moonEmoji(MoonPhaseName p) => switch (p) {
@@ -717,40 +737,97 @@ class _EventCard extends StatelessWidget {
         MoonPhaseName.lastQuarter => 'Ostatnia kwadra',
         MoonPhaseName.waningCrescent => 'Sierp malejący',
       };
+}
 
-  String _signName(ZodiacSign s) => switch (s) {
-        ZodiacSign.aries => 'Baran ♈',
-        ZodiacSign.taurus => 'Byk ♉',
-        ZodiacSign.gemini => 'Bliźnięta ♊',
-        ZodiacSign.cancer => 'Rak ♋',
-        ZodiacSign.leo => 'Lew ♌',
-        ZodiacSign.virgo => 'Panna ♍',
-        ZodiacSign.libra => 'Waga ♎',
-        ZodiacSign.scorpio => 'Skorpion ♏',
-        ZodiacSign.sagittarius => 'Strzelec ♐',
-        ZodiacSign.capricorn => 'Koziorożec ♑',
-        ZodiacSign.aquarius => 'Wodnik ♒',
-        ZodiacSign.pisces => 'Ryby ♓',
-      };
+// ── DSO event card ────────────────────────────────────────────────────────────
 
-  String _bodyName(CelestialBodyId id) => switch (id) {
-        CelestialBodyId.sun => 'Słońce',
-        CelestialBodyId.mercury => 'Merkury',
-        CelestialBodyId.venus => 'Wenus',
-        CelestialBodyId.mars => 'Mars',
-        CelestialBodyId.jupiter => 'Jowisz',
-        CelestialBodyId.saturn => 'Saturn',
-        _ => id.name,
-      };
+class _DsoEventCard extends StatelessWidget {
+  const _DsoEventCard({required this.result, required this.fmt});
 
-  String _bodyEmoji(CelestialBodyId id) => switch (id) {
-        CelestialBodyId.sun => '☀️',
-        CelestialBodyId.mercury => '☿',
-        CelestialBodyId.venus => '♀',
-        CelestialBodyId.mars => '♂',
-        CelestialBodyId.jupiter => '♃',
-        CelestialBodyId.saturn => '♄',
-        _ => '★',
+  final DsoVisibilityResult result;
+  final DateFormat fmt;
+
+  @override
+  Widget build(BuildContext context) {
+    final score = result.score;
+    final accentColor = score >= 7
+        ? AppTheme.scoreGreen
+        : score >= 5
+            ? AppTheme.scoreOrange
+            : AppTheme.scoreRed;
+
+    final timeStr = result.bestTimeUtc != null
+        ? fmt.format(result.bestTimeUtc!.toLocal())
+        : '–';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      decoration: BoxDecoration(
+        color: AppTheme.bgCard,
+        border: Border.all(color: accentColor.withValues(alpha: 0.2)),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 28,
+            child: Text(
+              _emoji(result.dso.type),
+              style: const TextStyle(fontSize: 16),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${result.dso.catalogName} w kulminacji',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textMain,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Alt max ${result.maxAltitudeDeg.toStringAsFixed(0)}° '
+                  '· score ${score.toStringAsFixed(1)} '
+                  '· Księżyc ${result.moonSeparationDeg.toStringAsFixed(0)}°',
+                  style: const TextStyle(
+                    fontSize: 9,
+                    color: AppTheme.textAccent,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            timeStr,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: accentColor,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _emoji(DsoType type) => switch (type) {
+        DsoType.galaxy => '🌌',
+        DsoType.openCluster => '✨',
+        DsoType.globularCluster => '⭐',
+        DsoType.emissionNebula => '🔴',
+        DsoType.reflectionNebula => '🔵',
+        DsoType.darkNebula => '⬛',
+        DsoType.planetaryNebula => '🟢',
+        DsoType.supernovaRemnant => '💥',
       };
 }
 

@@ -1,3 +1,5 @@
+import 'package:cosmic_companion/core/astronomy/celestial_calculator.dart';
+import 'package:cosmic_companion/data/models/celestial_body.dart';
 import 'package:cosmic_companion/features/dashboard/providers/dashboard_providers.dart';
 import 'package:cosmic_companion/features/dso/domain/dso_catalog.dart';
 import 'package:cosmic_companion/features/dso/domain/dso_visibility.dart';
@@ -55,6 +57,40 @@ final allDsoWithVisibilityProvider =
           moonBody.declination,
         ),
       )
+      .toList()
+    ..sort((a, b) => b.score.compareTo(a.score));
+
+  return results;
+});
+
+/// DSO visibility for an arbitrary calendar date.
+/// Takes a UTC midnight DateTime, computes moon state via Sweph for that date.
+final dsoForDateProvider = FutureProvider.autoDispose
+    .family<List<DsoVisibilityResult>, DateTime>((ref, date) async {
+  final location = await ref.watch(currentLocationProvider.future);
+  final calculator = CelestialCalculator();
+  final midnight = DateTime.utc(date.year, date.month, date.day);
+
+  final moonPhase = await calculator.computeMoonPhase(midnight);
+  final moonBody = await calculator.computeBody(
+    CelestialBodyId.moon,
+    midnight,
+    location,
+  );
+
+  final results = DsoCatalog.all
+      .map(
+        (dso) => DsoVisibility.compute(
+          dso,
+          midnight,
+          location.latitude,
+          location.longitude,
+          moonPhase.illuminationPercent,
+          moonBody.rightAscension,
+          moonBody.declination,
+        ),
+      )
+      .where((r) => r.isVisible)
       .toList()
     ..sort((a, b) => b.score.compareTo(a.score));
 
