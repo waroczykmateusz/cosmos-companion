@@ -362,7 +362,7 @@ class _Legend extends StatelessWidget {
         children: [
           _LegendItem(
             color: AppTheme.scoreGreen.withValues(alpha: 0.5),
-            label: 'Dobre DSO',
+            label: 'Dobra astronomia',
           ),
           const SizedBox(width: 12),
           const _LegendItem(
@@ -585,7 +585,7 @@ class _SelectedDaySection extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Text(
-                    'Dobra noc dla DSO',
+                    'Dobra astronomia',
                     style: TextStyle(
                       fontSize: 9,
                       fontWeight: FontWeight.w700,
