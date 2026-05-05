@@ -19,7 +19,7 @@ class WeatherForecast {
 
   final List<HourlyWeather> hourly;
 
-  /// Average cloud cover (0–100 %) during tonight's dark hours (21–23 local).
+  /// Average cloud cover (0–100 %) during tonight's dark hours (21–05 local).
   int get tonightCloudCoverPct => _nightAvg(0);
 
   /// Average precipitation probability (0–100 %) tonight.
@@ -39,7 +39,7 @@ class WeatherForecast {
 
   List<HourlyWeather> _slice(int dayIndex) {
     final start = dayIndex * 24 + 21;
-    final end = (dayIndex * 24 + 24).clamp(0, hourly.length);
+    final end = (dayIndex * 24 + 29).clamp(0, hourly.length); // 05:00 next day
     if (start >= hourly.length) return const [];
     return hourly.sublist(start, end);
   }
