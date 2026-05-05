@@ -124,8 +124,8 @@ double _sunAltAtJD(double jd, GeoLocation location) {
 /// Returns null if no crossing exists in the interval.
 DateTime? _findSunAltCrossing(
     double jdA, double jdB, double targetAlt, GeoLocation location) {
-  var altA = _sunAltAtJD(jdA, location);
-  var altB = _sunAltAtJD(jdB, location);
+  final altA = _sunAltAtJD(jdA, location);
+  final altB = _sunAltAtJD(jdB, location);
   if ((altA - targetAlt).sign == (altB - targetAlt).sign) return null;
 
   var lo = jdA;

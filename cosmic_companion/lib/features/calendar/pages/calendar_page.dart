@@ -460,6 +460,9 @@ class _ForecastStrip extends ConsumerWidget {
                   badgeDays.contains(day.day);
 
               final illum = DsoVisibility.approxMoonIllumination(day.toUtc());
+              final illumNext = DsoVisibility.approxMoonIllumination(
+                  day.add(const Duration(days: 1)).toUtc());
+              final waxing = illumNext > illum;
               final cloud = i < weekCloud.length ? weekCloud[i] : 0;
               final score = goodDso
                   ? (10.0 - illum / 100.0 * 3.0 - cloud / 100.0 * 4.0)
@@ -497,7 +500,7 @@ class _ForecastStrip extends ConsumerWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      _approxMoonEmoji(day),
+                      _moonEmoji(illum, waxing),
                       style: const TextStyle(fontSize: 14),
                     ),
                     const SizedBox(height: 4),
@@ -520,18 +523,12 @@ class _ForecastStrip extends ConsumerWidget {
     );
   }
 
-  String _approxMoonEmoji(DateTime day) {
-    final epoch = DateTime(2024, 1, 11);
-    final diff = day.difference(epoch).inDays;
-    final phase = (diff % 29.5).abs();
-    if (phase < 1.5) return '🌑';
-    if (phase < 6) return '🌒';
-    if (phase < 8.5) return '🌓';
-    if (phase < 13) return '🌔';
-    if (phase < 16) return '🌕';
-    if (phase < 21) return '🌖';
-    if (phase < 23.5) return '🌗';
-    return '🌘';
+  String _moonEmoji(double illum, bool waxing) {
+    if (illum < 3) return '🌑';
+    if (illum < 45) return waxing ? '🌒' : '🌘';
+    if (illum < 55) return waxing ? '🌓' : '🌗';
+    if (illum < 97) return waxing ? '🌔' : '🌖';
+    return '🌕';
   }
 }
 
