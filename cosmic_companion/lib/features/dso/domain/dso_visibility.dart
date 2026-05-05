@@ -38,6 +38,7 @@ abstract final class DsoVisibility {
     double moonIllumination,
     double moonRaHours,
     double moonDecDeg,
+    int bortleLevel, // 1 (darkest) – 9 (worst light pollution)
   ) {
     final midnightJD = _toJD(midnight);
 
@@ -65,7 +66,7 @@ abstract final class DsoVisibility {
       moonDecDeg,
     );
 
-    // Score: altitude component (0–10) reduced by Moon interference
+    // Score: altitude component (0–10) reduced by Moon and Bortle interference
     final altScore =
         isVisible
             ? ((maxAlt - _minAltDeg).clamp(0.0, 50.0) / 50.0 * 10.0)
@@ -75,7 +76,13 @@ abstract final class DsoVisibility {
         (moonIllumination / 100.0) *
         (1.0 - (moonSep / 90.0).clamp(0.0, 1.0)) *
         3.0;
-    final score = (altScore - moonPenalty).clamp(0.0, 10.0);
+    // Bortle penalty: faint objects suffer more in light-polluted skies.
+    // Bortle 1–3 → no penalty; Bortle 9 + mag ≥ 10 → up to 4 pts.
+    final bortlePenalty =
+        ((bortleLevel - 3).clamp(0, 6) / 6.0) *
+        ((dso.magnitude - 5.0) / 5.0).clamp(0.0, 1.0) *
+        4.0;
+    final score = (altScore - moonPenalty - bortlePenalty).clamp(0.0, 10.0);
 
     return DsoVisibilityResult(
       dso: dso,

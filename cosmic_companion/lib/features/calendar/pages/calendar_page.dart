@@ -5,6 +5,7 @@ import 'package:cosmic_companion/features/calendar/providers/calendar_providers.
 import 'package:cosmic_companion/features/dso/domain/dso_object.dart';
 import 'package:cosmic_companion/features/dso/domain/dso_visibility.dart';
 import 'package:cosmic_companion/features/dso/providers/dso_providers.dart';
+import 'package:cosmic_companion/features/map/providers/map_providers.dart';
 import 'package:cosmic_companion/features/weather/providers/weather_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -428,6 +429,8 @@ class _ForecastStrip extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final weekCloud = ref.watch(weekCloudCoverProvider);
+    final bortle = ref.watch(bortleLevelProvider).valueOrNull?.value ?? 5;
+    final bortlePenalty = ((bortle - 3).clamp(0, 6) / 6.0) * 2.5;
     final now = DateTime.now();
     const dowLabels = ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb', 'Nd'];
 
@@ -465,9 +468,9 @@ class _ForecastStrip extends ConsumerWidget {
               final waxing = illumNext > illum;
               final cloud = i < weekCloud.length ? weekCloud[i] : 0;
               final score = goodDso
-                  ? (10.0 - illum / 100.0 * 3.0 - cloud / 100.0 * 4.0)
+                  ? (10.0 - illum / 100.0 * 3.0 - cloud / 100.0 * 4.0 - bortlePenalty)
                       .clamp(0.0, 10.0)
-                  : (4.0 - illum / 100.0 * 2.0 - cloud / 100.0 * 3.0)
+                  : (4.0 - illum / 100.0 * 2.0 - cloud / 100.0 * 3.0 - bortlePenalty * 0.5)
                       .clamp(0.0, 4.0);
               final scoreColor = score >= 7
                   ? AppTheme.scoreGreen

@@ -3,6 +3,7 @@ import 'package:cosmic_companion/data/models/celestial_body.dart';
 import 'package:cosmic_companion/features/dashboard/providers/dashboard_providers.dart';
 import 'package:cosmic_companion/features/dso/domain/dso_catalog.dart';
 import 'package:cosmic_companion/features/dso/domain/dso_visibility.dart';
+import 'package:cosmic_companion/features/map/providers/map_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Visible DSO tonight, sorted descending by score. Filters out score == 0.
@@ -11,6 +12,7 @@ final visibleDsoTodayProvider =
   final location = await ref.watch(currentLocationProvider.future);
   final moonPhase = await ref.watch(moonPhaseProvider.future);
   final moonBody = await ref.watch(moonBodyProvider.future);
+  final bortle = await ref.watch(bortleLevelProvider.future);
 
   final now = DateTime.now().toUtc();
   final midnight = DateTime.utc(now.year, now.month, now.day);
@@ -25,6 +27,7 @@ final visibleDsoTodayProvider =
           moonPhase.illuminationPercent,
           moonBody.rightAscension,
           moonBody.declination,
+          bortle.value,
         ),
       )
       .where((r) => r.isVisible)
@@ -41,6 +44,7 @@ final allDsoWithVisibilityProvider =
   final location = await ref.watch(currentLocationProvider.future);
   final moonPhase = await ref.watch(moonPhaseProvider.future);
   final moonBody = await ref.watch(moonBodyProvider.future);
+  final bortle = await ref.watch(bortleLevelProvider.future);
 
   final now = DateTime.now().toUtc();
   final midnight = DateTime.utc(now.year, now.month, now.day);
@@ -55,6 +59,7 @@ final allDsoWithVisibilityProvider =
           moonPhase.illuminationPercent,
           moonBody.rightAscension,
           moonBody.declination,
+          bortle.value,
         ),
       )
       .toList()
@@ -68,6 +73,7 @@ final allDsoWithVisibilityProvider =
 final dsoForDateProvider = FutureProvider.autoDispose
     .family<List<DsoVisibilityResult>, DateTime>((ref, date) async {
   final location = await ref.watch(currentLocationProvider.future);
+  final bortle = await ref.watch(bortleLevelProvider.future);
   final calculator = CelestialCalculator();
   final midnight = DateTime.utc(date.year, date.month, date.day);
 
@@ -88,6 +94,7 @@ final dsoForDateProvider = FutureProvider.autoDispose
           moonPhase.illuminationPercent,
           moonBody.rightAscension,
           moonBody.declination,
+          bortle.value,
         ),
       )
       .where((r) => r.isVisible)
@@ -103,6 +110,7 @@ final dsoForDateProvider = FutureProvider.autoDispose
 final dsoBadgeMonthProvider =
     FutureProvider.autoDispose.family<Set<int>, DateTime>((ref, month) async {
   final location = await ref.watch(currentLocationProvider.future);
+  final bortle = await ref.watch(bortleLevelProvider.future);
   final calculator = CelestialCalculator();
 
   final daysInMonth = DateTime(month.year, month.month + 1, 0).day;
@@ -125,6 +133,7 @@ final dsoBadgeMonthProvider =
         moonPhase.illuminationPercent,
         moonBody.rightAscension,
         moonBody.declination,
+        bortle.value,
       );
       return r.score >= 7;
     });
