@@ -12,6 +12,7 @@ import 'package:cosmic_companion/features/dso/domain/dso_visibility.dart';
 import 'package:cosmic_companion/features/dso/pages/catalog_page.dart';
 import 'package:cosmic_companion/features/dso/providers/dso_providers.dart';
 import 'package:cosmic_companion/features/map/pages/light_pollution_map_page.dart';
+import 'package:cosmic_companion/features/map/providers/map_providers.dart';
 import 'package:cosmic_companion/features/weather/providers/weather_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -315,10 +316,11 @@ class _SkyConditionsCard extends ConsumerWidget {
     final cloud = ref.watch(cloudCoverProvider);
     final phaseAsync = ref.watch(moonPhaseProvider);
     final twilightAsync = ref.watch(astroTwilightProvider);
+    final bortleAsync = ref.watch(bortleLevelProvider);
 
     final pips = _pipsFor(seeing);
-    final bortle = _bortleFor(seeing);
     final seeingLabel = _seeingLabel(seeing);
+    final bortleLevel = bortleAsync.valueOrNull;
 
     final illumination = phaseAsync.valueOrNull?.illuminationPercent ?? 0.0;
     final illumColor = illumination < 30
@@ -393,17 +395,15 @@ class _SkyConditionsCard extends ConsumerWidget {
               Expanded(
                 child: _MetricCell(
                   label: 'BORTLE',
-                  value: '$bortle',
-                  valueColor: bortle <= 4
-                      ? AppTheme.scoreGreen
-                      : bortle <= 6
-                          ? AppTheme.scoreOrange
-                          : AppTheme.scoreRed,
-                  sub: bortle <= 3
-                      ? 'Ciemne niebo'
-                      : bortle <= 5
-                          ? 'Wiejskie niebo'
-                          : 'Podmiejskie',
+                  value: bortleLevel != null ? '${bortleLevel.value}' : '–',
+                  valueColor: bortleLevel == null
+                      ? AppTheme.textMuted
+                      : bortleLevel.value <= 4
+                          ? AppTheme.scoreGreen
+                          : bortleLevel.value <= 6
+                              ? AppTheme.scoreOrange
+                              : AppTheme.scoreRed,
+                  sub: bortleLevel?.description ?? '…',
                 ),
               ),
             ],
@@ -458,14 +458,6 @@ class _SkyConditionsCard extends ConsumerWidget {
         SeeingRating.fair => 3,
         SeeingRating.poor => 2,
         SeeingRating.bad => 1,
-      };
-
-  int _bortleFor(SeeingRating r) => switch (r) {
-        SeeingRating.excellent => 2,
-        SeeingRating.good => 4,
-        SeeingRating.fair => 6,
-        SeeingRating.poor => 7,
-        SeeingRating.bad => 9,
       };
 
   String _seeingLabel(SeeingRating r) => switch (r) {
