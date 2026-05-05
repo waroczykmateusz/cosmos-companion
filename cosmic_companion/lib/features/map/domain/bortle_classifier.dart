@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Nine-level Bortle dark-sky scale (1 = best, 9 = worst).
 enum BortleLevel {
@@ -30,15 +31,45 @@ enum BortleLevel {
 /// Estimates Bortle level by sampling the NASA VIIRS Black Marble tile
 /// at the observer's exact coordinates.
 ///
-/// Falls back to a coordinate hash when the network is unavailable.
+/// Results are cached in memory and in SharedPreferences (TTL 30 days).
+/// Falls back to the last known cached value, or Bortle 5 if no cache exists.
 class BortleClassifier {
   const BortleClassifier();
 
+  static final Map<String, BortleLevel> _memCache = {};
+  static const _ttl = Duration(days: 30);
+
+  static String _cacheKey(double lat, double lon) =>
+      '${lat.toStringAsFixed(2)}_${lon.toStringAsFixed(2)}';
+
   Future<BortleLevel> estimate(double lat, double lon) async {
+    final key = _cacheKey(lat, lon);
+
+    if (_memCache.containsKey(key)) return _memCache[key]!;
+
+    final prefs = await SharedPreferences.getInstance();
+    final cachedValue = prefs.getInt('bortle_v_$key');
+    final cachedTs = prefs.getInt('bortle_ts_$key');
+
+    if (cachedValue != null && cachedTs != null) {
+      final age = DateTime.now().millisecondsSinceEpoch - cachedTs;
+      if (age < _ttl.inMilliseconds) {
+        final level = BortleLevel.fromValue(cachedValue);
+        _memCache[key] = level;
+        return level;
+      }
+    }
+
     try {
-      return await _sampleViirsTile(lat, lon);
+      final level = await _sampleViirsTile(lat, lon);
+      _memCache[key] = level;
+      await prefs.setInt('bortle_v_$key', level.value);
+      await prefs.setInt('bortle_ts_$key', DateTime.now().millisecondsSinceEpoch);
+      return level;
     } on Exception catch (_) {
-      return _fallback(lat, lon);
+      // Stale cache is better than pseudorandom; neutral Bortle 5 as last resort.
+      if (cachedValue != null) return BortleLevel.fromValue(cachedValue);
+      return BortleLevel.five;
     }
   }
 
@@ -54,7 +85,6 @@ class BortleClassifier {
     final pixX = (((lon + 180.0) / 360.0 * n - tileX) * 256).floor().clamp(0, 255);
     final pixY = ((mercY * n - tileY) * 256).floor().clamp(0, 255);
 
-    // GIBS WMTS URL: {z}/{y}/{x} (TileMatrix/TileRow/TileCol)
     const base = 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best'
         '/VIIRS_Black_Marble/default/2016-01-01'
         '/GoogleMapsCompatible_Level8';
@@ -65,7 +95,7 @@ class BortleClassifier {
       final request = await client.getUrl(Uri.parse(url));
       request.headers.set('User-Agent', 'com.waroczyk.cosmic_companion');
       final response = await request.close();
-      if (response.statusCode != 200) return _fallback(lat, lon);
+      if (response.statusCode != 200) throw Exception('HTTP ${response.statusCode}');
 
       final chunks = <int>[];
       await for (final chunk in response) {
@@ -77,7 +107,7 @@ class BortleClassifier {
       final frame = await codec.getNextFrame();
       final image = frame.image;
       final byteData = await image.toByteData();
-      if (byteData == null) return _fallback(lat, lon);
+      if (byteData == null) throw Exception('No pixel data');
 
       final offset = (pixY * image.width + pixX) * 4;
       final r = byteData.getUint8(offset);
@@ -100,10 +130,5 @@ class BortleClassifier {
     if (lum < 180) return 7;
     if (lum < 215) return 8;
     return 9;
-  }
-
-  static BortleLevel _fallback(double lat, double lon) {
-    final hash = (lat.abs() * 1000 + lon.abs() * 100).toInt();
-    return BortleLevel.fromValue((hash % 9) + 1);
   }
 }

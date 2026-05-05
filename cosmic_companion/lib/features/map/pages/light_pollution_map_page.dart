@@ -3,6 +3,7 @@ import 'package:cosmic_companion/features/dashboard/providers/dashboard_provider
 import 'package:cosmic_companion/features/map/domain/bortle_classifier.dart';
 import 'package:cosmic_companion/features/map/providers/map_providers.dart';
 import 'package:cosmic_companion/features/map/widgets/bortle_legend.dart';
+import 'package:cosmic_companion/features/map/widgets/location_planner_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -21,10 +22,21 @@ class _LightPollutionMapPageState
   bool _showOverlay = true;
   bool _showLegend = false;
 
+  void _onMapTap(TapPosition _, LatLng point) {
+    ref.read(selectedPlannerLocationProvider.notifier).state = point;
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const LocationPlannerSheet(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final locationAsync = ref.watch(currentLocationProvider);
+    final selectedLoc = ref.watch(selectedPlannerLocationProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -58,9 +70,8 @@ class _LightPollutionMapPageState
         ),
         data: (location) {
           final center = LatLng(location.latitude, location.longitude);
-          final bortleLevel = ref
-              .watch(bortleLevelProvider)
-              .valueOrNull ?? BortleLevel.one;
+          final bortleLevel =
+              ref.watch(bortleLevelProvider).valueOrNull ?? BortleLevel.one;
 
           return Stack(
             children: [
@@ -68,6 +79,7 @@ class _LightPollutionMapPageState
                 options: MapOptions(
                   initialCenter: center,
                   initialZoom: 9,
+                  onTap: _onMapTap,
                 ),
                 children: [
                   TileLayer(
@@ -78,9 +90,6 @@ class _LightPollutionMapPageState
                     fallbackUrl:
                         'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                   ),
-                  // NASA VIIRS Black Marble (annual composite 2016).
-                  // GIBS TileMatrixSet: GoogleMapsCompatible_Level8 (max z=8).
-                  // URL order: {TileMatrix}/{TileRow}/{TileCol} = {z}/{y}/{x}
                   if (_showOverlay)
                     Opacity(
                       opacity: 0.85,
@@ -94,6 +103,7 @@ class _LightPollutionMapPageState
                         errorTileCallback: (_, __, ___) {},
                       ),
                     ),
+                  // Current location marker
                   MarkerLayer(
                     markers: [
                       Marker(
@@ -104,6 +114,18 @@ class _LightPollutionMapPageState
                       ),
                     ],
                   ),
+                  // Planner (tapped) location marker
+                  if (selectedLoc != null)
+                    MarkerLayer(
+                      markers: [
+                        Marker(
+                          point: selectedLoc,
+                          width: 36,
+                          height: 36,
+                          child: const _PlannerMarker(),
+                        ),
+                      ],
+                    ),
                 ],
               ),
               Positioned(
@@ -152,6 +174,23 @@ class _LocationMarker extends StatelessWidget {
         boxShadow: const [BoxShadow(blurRadius: 6, color: Colors.black54)],
       ),
       child: const Icon(Icons.my_location, size: 18, color: Colors.white),
+    );
+  }
+}
+
+class _PlannerMarker extends StatelessWidget {
+  const _PlannerMarker();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.amber.withAlpha(220),
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white, width: 2),
+        boxShadow: const [BoxShadow(blurRadius: 6, color: Colors.black54)],
+      ),
+      child: const Icon(Icons.travel_explore, size: 18, color: Colors.white),
     );
   }
 }

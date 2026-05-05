@@ -38,6 +38,7 @@ abstract final class DsoVisibility {
     double moonIllumination,
     double moonRaHours,
     double moonDecDeg,
+    int bortleLevel, // 1 (darkest) – 9 (worst light pollution)
   ) {
     final midnightJD = _toJD(midnight);
 
@@ -59,17 +60,29 @@ abstract final class DsoVisibility {
     final bestTime = bestJD != null ? _fromJD(bestJD) : null;
 
     final moonSep = _angularDistance(
-      dso.raHours, dso.decDeg, moonRaHours, moonDecDeg,
+      dso.raHours,
+      dso.decDeg,
+      moonRaHours,
+      moonDecDeg,
     );
 
-    // Score: altitude component (0–10) reduced by Moon interference
-    final altScore = isVisible
-        ? ((maxAlt - _minAltDeg).clamp(0.0, 50.0) / 50.0 * 10.0)
-        : 0.0;
+    // Score: altitude component (0–10) reduced by Moon and Bortle interference
+    final altScore =
+        isVisible
+            ? ((maxAlt - _minAltDeg).clamp(0.0, 50.0) / 50.0 * 10.0)
+            : 0.0;
     // Moon penalty: larger when Moon is bright AND close to the target
     final moonPenalty =
-        (moonIllumination / 100.0) * (1.0 - (moonSep / 90.0).clamp(0.0, 1.0)) * 3.0;
-    final score = (altScore - moonPenalty).clamp(0.0, 10.0);
+        (moonIllumination / 100.0) *
+        (1.0 - (moonSep / 90.0).clamp(0.0, 1.0)) *
+        3.0;
+    // Bortle penalty: faint objects suffer more in light-polluted skies.
+    // Bortle 1–3 → no penalty; Bortle 9 + mag ≥ 10 → up to 4 pts.
+    final bortlePenalty =
+        ((bortleLevel - 3).clamp(0, 6) / 6.0) *
+        ((dso.magnitude - 5.0) / 5.0).clamp(0.0, 1.0) *
+        4.0;
+    final score = (altScore - moonPenalty - bortlePenalty).clamp(0.0, 10.0);
 
     return DsoVisibilityResult(
       dso: dso,
@@ -79,6 +92,20 @@ abstract final class DsoVisibility {
       score: score,
       moonSeparationDeg: moonSep,
     );
+  }
+
+  // ── Approximate Moon state (no Sweph) ────────────────────────────────────
+
+  /// Approximate Moon illumination 0–100 % for a UTC [date].
+  /// Pure formula — no FFI. Error typically < 2 percentage points.
+  static double approxMoonIllumination(DateTime date) {
+    // Reference new moon: 2025-01-29 UTC 00:00
+    const synodicDays = 29.53059;
+    final daysSinceRef =
+        date.millisecondsSinceEpoch / 86400000.0 - 1738108800000 / 86400000.0;
+    final phase = daysSinceRef % synodicDays;
+    final normalised = phase < 0 ? phase + synodicDays : phase;
+    return ((1 - cos(normalised / synodicDays * 2 * pi)) / 2) * 100;
   }
 
   // ── Pure-math helpers (no Sweph dependency) ──────────────────────────────
@@ -105,7 +132,8 @@ abstract final class DsoVisibility {
 
   static double _gmstDeg(double jd) {
     final t = (jd - 2451545.0) / 36525.0;
-    final gmst = 280.46061837 +
+    final gmst =
+        280.46061837 +
         360.98564736629 * (jd - 2451545.0) +
         0.000387933 * t * t -
         t * t * t / 38710000.0;
@@ -130,8 +158,8 @@ abstract final class DsoVisibility {
   static double _toJD(DateTime utc) {
     final y = utc.year;
     final m = utc.month;
-    final d = utc.day +
-        (utc.hour + utc.minute / 60.0 + utc.second / 3600.0) / 24.0;
+    final d =
+        utc.day + (utc.hour + utc.minute / 60.0 + utc.second / 3600.0) / 24.0;
     final a = ((14 - m) / 12).floor();
     final y2 = y + 4800 - a;
     final m2 = m + 12 * a - 3;
@@ -148,12 +176,13 @@ abstract final class DsoVisibility {
   static DateTime _fromJD(double jd) {
     final z = (jd + 0.5).floor();
     final f = (jd + 0.5) - z;
-    final a = z < 2299161
-        ? z
-        : () {
-            final alpha = (z - 1867216.25) ~/ 36524.25;
-            return z + 1 + alpha - alpha ~/ 4;
-          }();
+    final a =
+        z < 2299161
+            ? z
+            : () {
+              final alpha = (z - 1867216.25) ~/ 36524.25;
+              return z + 1 + alpha - alpha ~/ 4;
+            }();
     final b = a + 1524;
     final c = ((b - 122.1) / 365.25).floor();
     final dd = (365.25 * c).floor();
