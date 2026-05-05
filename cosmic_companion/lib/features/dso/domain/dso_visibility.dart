@@ -101,27 +101,6 @@ abstract final class DsoVisibility {
     return ((1 - cos(normalised / synodicDays * 2 * pi)) / 2) * 100;
   }
 
-  /// Approximate Moon RA (hours) for a UTC [date]. Accuracy ~10–15°.
-  static double approxMoonRaHours(DateTime date) {
-    const synodicDays = 29.53059;
-    const refRaDeg = 321; // sun RA on 2025-01-29 ≈ 321° (Aquarius)
-    final daysSinceRef =
-        (date.millisecondsSinceEpoch - 1738108800000) / 86400000.0;
-    final raDeg =
-        ((refRaDeg + daysSinceRef * (360.0 / synodicDays)) % 360 + 360) % 360;
-    return raDeg / 15.0;
-  }
-
-  /// Approximate Moon declination (°) for a UTC [date]. Accuracy ~5°.
-  static double approxMoonDecDeg(DateTime date) {
-    const synodicDays = 29.53059;
-    final daysSinceRef =
-        (date.millisecondsSinceEpoch - 1738108800000) / 86400000.0;
-    final phase = daysSinceRef % synodicDays;
-    final normalised = phase < 0 ? phase + synodicDays : phase;
-    return sin(normalised / synodicDays * 2 * pi) * 23.5;
-  }
-
   // ── Pure-math helpers (no Sweph dependency) ──────────────────────────────
 
   static double _altitude(

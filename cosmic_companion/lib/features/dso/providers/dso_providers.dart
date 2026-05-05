@@ -98,29 +98,33 @@ final dsoForDateProvider = FutureProvider.autoDispose
 });
 
 /// For each day in the given month: whether any DSO scores ≥ 7.
-/// Uses formula-based Moon approximation (no FFI) for moon illumination
-/// and position — fast enough to run for all 31 days synchronously.
+/// Uses Sweph (same source as dsoForDateProvider) for moon illumination
+/// and position — consistent with calendar event data.
 final dsoBadgeMonthProvider =
     FutureProvider.autoDispose.family<Set<int>, DateTime>((ref, month) async {
   final location = await ref.watch(currentLocationProvider.future);
+  final calculator = CelestialCalculator();
 
   final daysInMonth = DateTime(month.year, month.month + 1, 0).day;
 
   final goodDays = <int>{};
   for (var day = 1; day <= daysInMonth; day++) {
     final midnight = DateTime.utc(month.year, month.month, day);
-    final illumination = DsoVisibility.approxMoonIllumination(midnight);
-    final moonRa = DsoVisibility.approxMoonRaHours(midnight);
-    final moonDec = DsoVisibility.approxMoonDecDeg(midnight);
+    final moonPhase = await calculator.computeMoonPhase(midnight);
+    final moonBody = await calculator.computeBody(
+      CelestialBodyId.moon,
+      midnight,
+      location,
+    );
     final anyGood = DsoCatalog.all.any((dso) {
       final r = DsoVisibility.compute(
         dso,
         midnight,
         location.latitude,
         location.longitude,
-        illumination,
-        moonRa,
-        moonDec,
+        moonPhase.illuminationPercent,
+        moonBody.rightAscension,
+        moonBody.declination,
       );
       return r.score >= 7;
     });
