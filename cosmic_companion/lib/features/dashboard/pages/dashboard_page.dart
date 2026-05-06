@@ -368,11 +368,14 @@ class _SkyConditionsCard extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: 6),
-              Text(
-                '$seeingLabel · $pips/5',
-                style: const TextStyle(
-                  fontSize: 9,
-                  color: AppTheme.scoreGreen,
+              Flexible(
+                child: Text(
+                  '$seeingLabel · $pips/5',
+                  style: const TextStyle(
+                    fontSize: 9,
+                    color: AppTheme.scoreGreen,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -545,7 +548,7 @@ class _HourlyCloudCard extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'ZACHMURZENIE · NOC GODZINOWO',
+                'ZACHMURZENIE · GODZINOWO',
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
