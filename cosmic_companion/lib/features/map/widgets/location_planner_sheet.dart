@@ -128,9 +128,7 @@ class LocationPlannerSheet extends ConsumerWidget {
               error: (_, __) => const SizedBox.shrink(),
               data: (moon) {
                 final illum = moon.illuminationPercent;
-                final illumNext = DsoVisibility.approxMoonIllumination(
-                    DateTime.now().toUtc().add(const Duration(days: 1)));
-                final waxing = illumNext > illum;
+                final waxing = moon.phaseAngle < 180;
                 final emoji = _moonEmoji(illum, waxing);
                 final illumColor = illum < 30
                     ? AppTheme.scoreGreen
