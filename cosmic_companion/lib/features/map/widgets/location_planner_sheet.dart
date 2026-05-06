@@ -4,6 +4,7 @@ import 'package:cosmic_companion/features/dashboard/providers/dashboard_provider
 import 'package:cosmic_companion/features/dso/domain/dso_object.dart';
 import 'package:cosmic_companion/features/dso/domain/dso_visibility.dart';
 import 'package:cosmic_companion/features/map/providers/map_providers.dart';
+import 'package:cosmic_companion/features/weather/domain/weather_data.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -17,6 +18,7 @@ class LocationPlannerSheet extends ConsumerWidget {
     final bortleAsync = ref.watch(plannerBortleProvider);
     final dsoAsync = ref.watch(plannerDsoProvider);
     final moonAsync = ref.watch(moonPhaseProvider);
+    final weatherAsync = ref.watch(plannerWeatherProvider);
 
     if (loc == null) return const SizedBox.shrink();
 
@@ -167,6 +169,62 @@ class LocationPlannerSheet extends ConsumerWidget {
             ),
 
             const SizedBox(height: 16),
+            const _SectionHeader(label: 'POGODA TEJ NOCY'),
+            const SizedBox(height: 8),
+
+            weatherAsync.when(
+              loading: () => const Center(
+                child: SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2, color: AppTheme.accentBlue),
+                ),
+              ),
+              error: (_, __) => const SizedBox.shrink(),
+              data: (WeatherForecast? weather) {
+                if (weather == null) {
+                  return const _InfoCard(
+                    child: Text(
+                      'Brak danych pogodowych dla tej lokalizacji.',
+                      style: TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                    ),
+                  );
+                }
+                final cloud = weather.tonightCloudCoverPct;
+                final precip = weather.tonightPrecipPct;
+                final cloudColor = cloud < 30
+                    ? AppTheme.scoreGreen
+                    : cloud < 60
+                        ? AppTheme.scoreOrange
+                        : AppTheme.scoreRed;
+                return _InfoCard(
+                  child: Column(
+                    children: [
+                      _WeatherRow(
+                        icon: Icons.cloud,
+                        label: 'Zachmurzenie',
+                        value: '$cloud%',
+                        valueColor: cloudColor,
+                        bar: cloud / 100.0,
+                        barColor: cloudColor,
+                      ),
+                      const SizedBox(height: 8),
+                      _WeatherRow(
+                        icon: Icons.umbrella,
+                        label: 'Prawdopodobieństwo opadów',
+                        value: '$precip%',
+                        valueColor: precip > 50
+                            ? AppTheme.scoreRed
+                            : AppTheme.textMuted,
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+
+            const SizedBox(height: 16),
             const _SectionHeader(label: 'OBIEKTY DSO TEJ NOCY'),
             const SizedBox(height: 8),
 
@@ -266,6 +324,66 @@ class _InfoCard extends StatelessWidget {
         ),
         child: child,
       );
+}
+
+class _WeatherRow extends StatelessWidget {
+  const _WeatherRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.valueColor,
+    this.bar,
+    this.barColor,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color valueColor;
+  final double? bar;
+  final Color? barColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 14, color: AppTheme.textMuted),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+              ),
+            ),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: valueColor,
+              ),
+            ),
+          ],
+        ),
+        if (bar != null) ...[
+          const SizedBox(height: 4),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(3),
+            child: LinearProgressIndicator(
+              value: bar,
+              minHeight: 4,
+              backgroundColor: AppTheme.border,
+              valueColor: AlwaysStoppedAnimation<Color>(
+                  barColor ?? AppTheme.accentBlue),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
 }
 
 class _DsoRow extends StatelessWidget {
