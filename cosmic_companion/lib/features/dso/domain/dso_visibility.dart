@@ -39,15 +39,17 @@ abstract final class DsoVisibility {
     double moonRaHours,
     double moonDecDeg,
     int bortleLevel, // 1 (darkest) – 9 (worst light pollution)
+    [int cloudCoverPct = 0] // 0–100 %; 0 = unknown/assumed clear
   ) {
     final midnightJD = _toJD(midnight);
 
-    // Scan 21:00–05:00 UTC (= 20:00 to 04:00 prev/next day in UTC midnight terms)
-    // Window: midnightJD - 3h to + 5h (covers central European night in both seasons)
+    // Scan 20:00–06:00 UTC — covers full astronomical night for central Europe
+    // in both summer (UTC+3, dusk ~20:12 UTC) and winter (UTC+1, dusk ~15:00 UTC).
+    // midnightJD - 4h to + 6h in 30-min steps (21 steps).
     var maxAlt = -90.0;
     double? bestJD;
-    for (var i = 0; i <= 16; i++) {
-      final h = -3.0 + i * 0.5; // steps: 21:00 to 05:00
+    for (var i = 0; i <= 20; i++) {
+      final h = -4.0 + i * 0.5; // steps: 20:00 to 06:00 UTC
       final jd = midnightJD + h / 24.0;
       final alt = _altitude(dso.raHours, dso.decDeg, jd, latDeg, lonDeg);
       if (alt > maxAlt) {
@@ -82,7 +84,13 @@ abstract final class DsoVisibility {
         ((bortleLevel - 3).clamp(0, 6) / 6.0) *
         ((dso.magnitude - 5.0) / 5.0).clamp(0.0, 1.0) *
         4.0;
-    final score = (altScore - moonPenalty - bortlePenalty).clamp(0.0, 10.0);
+    // Cloud cover: 0 % cloud → factor 1.0, 100 % cloud → factor 0.0.
+    final cloudFactor = (100 - cloudCoverPct.clamp(0, 100)) / 100.0;
+    final score =
+        ((altScore - moonPenalty - bortlePenalty) * cloudFactor).clamp(
+          0.0,
+          10.0,
+        );
 
     return DsoVisibilityResult(
       dso: dso,
@@ -98,6 +106,10 @@ abstract final class DsoVisibility {
 
   /// Approximate Moon illumination 0–100 % for a UTC [date].
   /// Pure formula — no FFI. Error typically < 2 percentage points.
+  ///
+  /// Not used in production — providers obtain illumination from Swiss Ephemeris.
+  /// Kept for offline/testing use.
+  @Deprecated('Use CelestialCalculator.computeMoonPhase() instead')
   static double approxMoonIllumination(DateTime date) {
     // Reference new moon: 2025-01-29 UTC 00:00
     const synodicDays = 29.53059;

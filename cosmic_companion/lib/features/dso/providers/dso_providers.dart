@@ -4,6 +4,7 @@ import 'package:cosmic_companion/features/dashboard/providers/dashboard_provider
 import 'package:cosmic_companion/features/dso/domain/dso_catalog.dart';
 import 'package:cosmic_companion/features/dso/domain/dso_visibility.dart';
 import 'package:cosmic_companion/features/map/providers/map_providers.dart';
+import 'package:cosmic_companion/features/weather/providers/weather_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Visible DSO tonight, sorted descending by score. Filters out score == 0.
@@ -13,6 +14,7 @@ final visibleDsoTodayProvider =
   final moonPhase = await ref.watch(moonPhaseProvider.future);
   final moonBody = await ref.watch(moonBodyProvider.future);
   final bortle = await ref.watch(bortleLevelProvider.future);
+  final cloudCover = ref.watch(cloudCoverProvider) ?? 0;
 
   final now = DateTime.now().toUtc();
   final midnight = DateTime.utc(now.year, now.month, now.day);
@@ -28,6 +30,7 @@ final visibleDsoTodayProvider =
           moonBody.rightAscension,
           moonBody.declination,
           bortle.value,
+          cloudCover,
         ),
       )
       .where((r) => r.isVisible)
@@ -45,6 +48,7 @@ final allDsoWithVisibilityProvider =
   final moonPhase = await ref.watch(moonPhaseProvider.future);
   final moonBody = await ref.watch(moonBodyProvider.future);
   final bortle = await ref.watch(bortleLevelProvider.future);
+  final cloudCover = ref.watch(cloudCoverProvider) ?? 0;
 
   final now = DateTime.now().toUtc();
   final midnight = DateTime.utc(now.year, now.month, now.day);
@@ -60,6 +64,7 @@ final allDsoWithVisibilityProvider =
           moonBody.rightAscension,
           moonBody.declination,
           bortle.value,
+          cloudCover,
         ),
       )
       .toList()
