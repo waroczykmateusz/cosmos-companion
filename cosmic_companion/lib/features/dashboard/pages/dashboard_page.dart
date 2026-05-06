@@ -128,6 +128,7 @@ class _DashboardContent extends ConsumerWidget {
         slivers: [
           SliverToBoxAdapter(child: _HeroHeader()),
           const SliverToBoxAdapter(child: _SkyConditionsCard()),
+          const SliverToBoxAdapter(child: _HourlyCloudCard()),
           const SliverToBoxAdapter(child: _DarkWindowCard()),
           const SliverToBoxAdapter(child: _RiseSetCard()),
           const SliverToBoxAdapter(child: _PlanetsSection()),
@@ -517,6 +518,125 @@ class _MetricCell extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ── Hourly cloud cover card ───────────────────────────────────────────────────
+
+class _HourlyCloudCard extends ConsumerWidget {
+  const _HourlyCloudCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final forecastAsync = ref.watch(weatherForecastProvider);
+
+    return forecastAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (forecast) {
+        if (forecast == null) return const SizedBox.shrink();
+        final entries = forecast.tonightHourly;
+        if (entries.isEmpty) return const SizedBox.shrink();
+
+        return _SpaceCard(
+          margin: const EdgeInsets.fromLTRB(14, 0, 14, 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'ZACHMURZENIE · NOC GODZINOWO',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.textAccent,
+                  letterSpacing: 1,
+                ),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                height: 72,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: entries.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 6),
+                  itemBuilder: (_, i) {
+                    final e = entries[i];
+                    final cloud = e.cloudCoverPct;
+                    final color = cloud < 30
+                        ? AppTheme.scoreGreen
+                        : cloud < 60
+                            ? AppTheme.scoreOrange
+                            : AppTheme.scoreRed;
+                    final timeLabel =
+                        DateFormat('HH:mm').format(e.time);
+                    final isNow = DateTime.now()
+                            .difference(e.time)
+                            .abs()
+                            .inMinutes <
+                        30;
+                    return Container(
+                      width: 46,
+                      decoration: BoxDecoration(
+                        color: isNow
+                            ? AppTheme.accentBlue.withValues(alpha: 0.10)
+                            : const Color(0x0D050E23),
+                        border: Border.all(
+                          color: isNow
+                              ? AppTheme.accentBlue.withValues(alpha: 0.35)
+                              : AppTheme.border,
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            timeLabel,
+                            style: TextStyle(
+                              fontSize: 8,
+                              color: isNow
+                                  ? AppTheme.accentBlue
+                                  : AppTheme.textMuted,
+                              fontWeight: isNow
+                                  ? FontWeight.w700
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '$cloud%',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: color,
+                              height: 1,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          SizedBox(
+                            width: 28,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(2),
+                              child: LinearProgressIndicator(
+                                value: cloud / 100.0,
+                                minHeight: 3,
+                                backgroundColor: AppTheme.border,
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(color),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

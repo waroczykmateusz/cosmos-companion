@@ -37,6 +37,17 @@ class WeatherForecast {
   List<int> get weekNightCloudCoverPct =>
       List.generate(7, _nightAvg, growable: false);
 
+  /// Hourly entries for tonight: 21:00–05:00 (next day) in local time.
+  List<HourlyWeather> get tonightHourly {
+    if (hourly.isEmpty) return const [];
+    final now = DateTime.now();
+    final start = DateTime(now.year, now.month, now.day, 21);
+    final end = DateTime(now.year, now.month, now.day + 1, 5);
+    return hourly
+        .where((h) => !h.time.isBefore(start) && h.time.isBefore(end))
+        .toList();
+  }
+
   List<HourlyWeather> _slice(int dayIndex) {
     final start = dayIndex * 24 + 21;
     final end = (dayIndex * 24 + 29).clamp(0, hourly.length); // 05:00 next day
