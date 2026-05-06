@@ -222,6 +222,101 @@ class LocationPlannerSheet extends ConsumerWidget {
               },
             ),
 
+            weatherAsync.maybeWhen(
+              data: (WeatherForecast? weather) {
+                final entries = weather?.tonightHourly ?? const [];
+                if (entries.isEmpty) return const SizedBox.shrink();
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 12),
+                    const _SectionHeader(label: 'ZACHMURZENIE · GODZINOWO'),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      height: 72,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: entries.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 6),
+                        itemBuilder: (_, i) {
+                          final e = entries[i];
+                          final cloud = e.cloudCoverPct;
+                          final color = cloud < 30
+                              ? AppTheme.scoreGreen
+                              : cloud < 60
+                                  ? AppTheme.scoreOrange
+                                  : AppTheme.scoreRed;
+                          final timeLabel =
+                              DateFormat('HH:mm').format(e.time);
+                          final isNow = DateTime.now()
+                                  .difference(e.time)
+                                  .abs()
+                                  .inMinutes <
+                              30;
+                          return Container(
+                            width: 46,
+                            decoration: BoxDecoration(
+                              color: isNow
+                                  ? AppTheme.accentBlue.withValues(alpha: 0.10)
+                                  : AppTheme.bgCard,
+                              border: Border.all(
+                                color: isNow
+                                    ? AppTheme.accentBlue.withValues(alpha: 0.35)
+                                    : AppTheme.border,
+                              ),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  timeLabel,
+                                  style: TextStyle(
+                                    fontSize: 8,
+                                    color: isNow
+                                        ? AppTheme.accentBlue
+                                        : AppTheme.textMuted,
+                                    fontWeight: isNow
+                                        ? FontWeight.w700
+                                        : FontWeight.normal,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '$cloud%',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: color,
+                                    height: 1,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                SizedBox(
+                                  width: 28,
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(2),
+                                    child: LinearProgressIndicator(
+                                      value: cloud / 100.0,
+                                      minHeight: 3,
+                                      backgroundColor: AppTheme.border,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                          color),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                );
+              },
+              orElse: () => const SizedBox.shrink(),
+            ),
+
             const SizedBox(height: 16),
             const _SectionHeader(label: 'OBIEKTY DSO TEJ NOCY'),
             const SizedBox(height: 8),
